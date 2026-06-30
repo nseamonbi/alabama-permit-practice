@@ -99,9 +99,24 @@
   .manual-link{display:inline-block;margin-top:7px;color:var(--crimson);font-weight:800;text-decoration:underline;
     text-underline-offset:2px;font-size:.84rem}
   .manual-link:hover{color:var(--crimson-d)}
+  button.manual-link{background:none;border:none;padding:0;cursor:pointer;font-family:inherit}
   .foot a{color:#bcd0f0;text-decoration:underline;text-underline-offset:2px}
   .foot a:hover{color:#fff}
   .manual-btn{display:block;width:100%;margin-top:12px;text-align:center;text-decoration:none;font-size:.95rem}
+  /* In-app manual passage popup */
+  .modal-backdrop{position:fixed;inset:0;z-index:60;background:rgba(8,18,38,.62);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:18px;animation:pop .2s both}
+  .modal-backdrop[hidden]{display:none}
+  .modal{position:relative;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    max-width:520px;width:100%;max-height:84dvh;overflow:auto;padding:22px 20px 20px;
+    animation:slideUp .25s ease both}
+  .modal-close{position:absolute;top:10px;right:10px;width:34px;height:34px;border:none;border-radius:9px;
+    background:var(--bg);color:var(--muted);font-size:1rem;font-weight:800;cursor:pointer}
+  .modal-close:hover{background:#e2e9f5;color:var(--navy)}
+  .m-kicker{font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--crimson);margin-bottom:6px}
+  .modal h3{margin:0 0 10px;font-size:1.18rem;color:var(--navy);padding-right:30px}
+  .m-body{margin:0;font-size:1rem;line-height:1.55;color:#22324d}
+  .m-cite{margin-top:12px;font-size:.85rem;font-weight:700;color:var(--muted);font-style:italic}
 
   /* Buttons */
   .btn{
@@ -253,6 +268,16 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="modal-backdrop" id="manualModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="modal-close" id="mClose" aria-label="Close">✕</button>
+    <div class="m-kicker">📖 From the Alabama Driver Manual</div>
+    <h3 id="mTitle"></h3>
+    <p class="m-body" id="mBody"></p>
+    <div class="m-cite" id="mCite"></div>
+    <a class="btn ghost manual-btn" id="mPdf" target="_blank" rel="noopener noreferrer" style="margin-top:14px"></a>
+  </div>
+</div>
 
 <script>
 /* ============================================================
@@ -469,9 +494,9 @@ const BANK = [
 
   /* ----- SAFE DRIVING ----- */
   { c:"safe",
-    q:"The recommended minimum following distance under good conditions is at least:",
-    choices:["A half-car length","One car length","A 3-second gap behind the vehicle ahead","Whatever feels comfortable"],
-    a:2, e:"Use the 3-second rule: when the car ahead passes a fixed point, you should not reach it for at least 3 seconds. Increase the gap in poor conditions.",
+    q:"In the Alabama manual, the recommended minimum following distance under good conditions is at least:",
+    choices:["A half-car length","One car length","A 2-second gap behind the vehicle ahead","Whatever feels comfortable"],
+    a:2, e:"Alabama teaches the two-second rule: when the car ahead passes a fixed point, you should not reach it before counting 'one-thousand-one, one-thousand-two.' Increase to 4+ seconds in poor conditions.",
     ref:"Safe Driving — Following Distance" },
 
   { c:"safe",
@@ -646,6 +671,64 @@ function manualHref(ref){
 function manualLinkText(ref){
   const p = manualRefPage(ref);
   return p ? `Open the Driver Manual to p.${p} (PDF) ↗` : "Open the Driver Manual (PDF) ↗";
+}
+/* Faithful short passages from the Alabama Driver Manual, keyed by topic (text after the em dash).
+   Shown in-app so the reference works on every device — including iPhone Safari. */
+const MANUAL_TEXT = {
+  "Sign Shapes & Colors":"Know traffic signs by their shape and color — both are coded to the sign's message. The three types are regulatory, warning, and informational/guide signs. A red octagon is always STOP; a downward-pointing triangle means YIELD.",
+  "Regulatory Signs":"Regulatory signs regulate the movement of traffic. They are black and white (except where shown in color) and MUST be obeyed. Examples include STOP, YIELD, DO NOT ENTER, ONE WAY, NO TURNS, speed limit, and no-parking signs.",
+  "Warning Signs":"Warning signs are black-and-yellow (black-and-orange in construction areas) and warn of hazardous conditions ahead that require extra caution. They are usually diamond-shaped. Examples: curves, bumps, dips, lane-ends/merge, slippery-when-wet, deer crossing, and railroad-crossing-ahead.",
+  "Work Zone Signs":"Orange (black-and-orange) signs and cones mark construction and maintenance work zones. Watch for flaggers, one-way traffic, workers, and obstructions, and obey all signs and instructions. A flagger's directions must be obeyed.",
+  "Pavement Markings":"Yellow center lines separate traffic moving in opposite directions; white lines separate lanes moving the same direction. A broken line means passing is allowed when safe; a solid yellow line on your side means no passing. A solid white edge line marks the outside edge of the travel lane.",
+  "Traffic Signals":"RED — stop and stay stopped until the signal turns green (turns after a complete stop may be allowed). YELLOW — the light is changing to red; clear the intersection and don't enter on red. GREEN — go, yielding to vehicles and pedestrians lawfully in the intersection. A flashing red means the same as a STOP sign.",
+  "Hand Signals":"Hand signals: LEFT TURN — arm extended straight out. RIGHT TURN — arm extended upward. STOP/SLOW — arm extended downward. In daytime, hand-and-arm signals may be used in addition to your signal lights.",
+  "Right-of-Way":"If two vehicles reach an uncontrolled intersection from different roads at about the same time, the driver on the left yields to the driver on the right. You must also yield to emergency vehicles, to a blind pedestrian using a white cane or guide dog, and — when turning left — to oncoming traffic. Cars entering from a private road or driveway must stop and yield.",
+  "Turning":"Prepare for a turn before you reach it and get into the proper lane well ahead. Signal at least 100 feet before turning and reduce speed before the turn. Pedestrians have the right of way. Finish your turn in the proper lane and cancel your signal afterward.",
+  "Turning & Right-of-Way":"When turning left at an intersection (or into a driveway or alley), you must yield to any vehicle approaching from the opposite direction that is in the intersection or so close as to be a hazard. Turn only when there is a safe gap.",
+  "Turns at Signals":"You may turn right after stopping for a red light if you're in the proper lane, unless a 'No Turn on Red' sign is posted. (A left on red is allowed only from a one-way onto a one-way.) Always come to a complete stop first and yield to pedestrians and cross traffic.",
+  "Yielding & Merging":"At a YIELD sign, slow down — and stop if necessary — to give the right of way to pedestrians and to vehicles on the road you're entering. When merging, use the acceleration lane to match traffic speed and merge smoothly into a safe gap.",
+  "Intersections & Roundabouts":"A roundabout is a circular intersection where traffic flows counter-clockwise. Slow down, yield to pedestrians and bicyclists, then yield to traffic already in the circle and enter at a safe gap. Keep your speed low, don't stop in the roundabout, and if you miss your exit go around again — never back up. Vehicles already in the roundabout have the right of way.",
+  "Changing Lanes & Passing":"Never change lanes until it's safe. Check ahead, behind, and to the side, signal, and glance over your shoulder to check the blind spot your mirror doesn't cover — a signal alone doesn't give you the right to move over. When passing, don't return to your lane until you can see the passed vehicle in your interior mirror.",
+  "Passing":"On two-lane roads you may pass on the left only if it can be completed safely without exceeding the speed limit. Never cross the center line to pass on a curve or hill where you can't see at least 500 feet, at an intersection, when meeting an oncoming vehicle, or where there's a solid yellow line on your side.",
+  "Merging & Lane Changes":"When a lane ends or you enter a highway, signal early and merge into the continuing lane at a safe gap, using the acceleration lane to match the speed of traffic. Never move over until you've checked that it's safe, including your blind spot.",
+  "School Buses":"When a school bus is stopped with its stop arm out and red lights flashing, traffic from BOTH directions must stop and stay stopped until the arm folds in and the lights go off. Stop at least 20 feet from the bus. (On a divided highway of four or more lanes, traffic meeting the bus on the opposite roadway need not stop.) Amber flashing lights warn the bus is about to stop.",
+  "Railroad Crossings":"Always expect a train. When red lights flash or a gate lowers, stop and stay stopped until the gate rises and the lights stop — never drive around a lowered gate. Stop 15 to 50 feet from the tracks, and if there's more than one track, be sure all are clear before crossing.",
+  "Speed Limits":"Alabama's basic speed law says you must never drive faster than is reasonable for existing conditions. Posted limits are the maximum for ideal conditions — slow down for weather, traffic, curves, hills, and crossings. Statutory limits include 30 mph in urban districts and 45 mph on county paved roads unless otherwise posted.",
+  "Speed Limits / School Zones":"A speed limit sign is the maximum legal speed under ideal conditions. In a posted school zone — often shown with flashing amber lights during the posted hours — slow to the reduced limit and watch for children.",
+  "Emergency Vehicles":"When an emergency vehicle approaches with flashing red or blue lights and a siren — whether overtaking or meeting you — pull to the side of the road and stop. If you're in an intersection, clear it first, then pull over. Don't go until the emergency vehicle has passed.",
+  "Move Over Law":"Approaching a stopped emergency vehicle or wrecker with flashing lights, on a road of four or more lanes you must vacate the lane nearest it. If you can't change lanes safely (or you're on a two-lane road), slow to at least 15 mph below the posted limit (10 mph if the limit is 20 mph or less).",
+  "Parking":"Don't park within 15 feet of a fire hydrant, within an intersection or crosswalk, within 30 feet of a stop sign or signal, within 50 feet of a railroad crossing, in front of a driveway, on a bridge, or beside a yellow-painted curb.",
+  "Pedestrians & Crosswalks":"Drivers must stop for pedestrians in a crosswalk and must not block a crosswalk when stopped at a sign or red light. Stop for school children and crossing guards directing traffic, and watch for pedestrians near schools, parked cars, and in poor visibility.",
+  "Pedestrian Right-of-Way":"The law requires you to stop and yield to a blind pedestrian carrying a white cane (tipped with red) or using a guide dog. Always yield to pedestrians lawfully in a crosswalk.",
+  "Sharing the Road":"Bicyclists have the same rights and responsibilities as drivers. Alabama law requires you to pass a bicycle leaving at least three feet of space, and only when clear — don't pass on a curve or hill, and never blast your horn at a cyclist. Watch for slow-moving vehicles (marked with an orange triangle) and give them room.",
+  "Following Distance":"Most rear-end collisions come from following too closely. Use the two-second rule: when the vehicle ahead passes a fixed object, you shouldn't reach that object before counting 'one-thousand-one, one-thousand-two.' In poor conditions, increase to a four- or five-second count.",
+  "Following Distance & Aggressive Drivers":"Keep a safe space cushion using the two-second rule (more in bad weather). If someone tailgates you, stay calm, hold a steady speed, leave extra room ahead of you, and let them pass when you safely can — never brake-check a tailgater.",
+  "Adverse Conditions":"On wet, snowy, or icy roads it can take three to twelve times the normal distance to stop, so slow down and increase your following distance. Brake gently; if you must stop suddenly on a slick surface, pump the brakes. Alabama law requires headlights on whenever your wipers are running for rain, sleet, or snow.",
+  "Skids & Hydroplaning":"Hydroplaning happens on wet roads when your tires ride up on a film of water; partial hydroplaning can begin around 35 mph and worsen with speed. If you start to hydroplane, take your foot off the gas and let the car slow — don't brake hard or steer sharply — until the tires regain grip. Good tread helps prevent it.",
+  "Night Driving":"About half of Alabama's fatal crashes happen at night. Never drive so fast that you can't stop within the distance your headlights light up. Dim your high beams within 500 feet of oncoming traffic and within 200 feet when following. Watch for pedestrians, bicycles, slow vehicles, and animals.",
+  "Night Driving & Headlights":"Dim your high beams within 500 feet of oncoming traffic and within 200 feet when following — it's the law. Headlights must be on from a half-hour after sunset to a half-hour before sunrise and whenever you can't see clearly for 500 feet. If oncoming high beams blind you, look toward the right edge of your lane until the vehicle passes.",
+  "Emergencies / Night Driving":"In any emergency, THINK BEFORE YOU ACT — an instinctive reaction like slamming the brakes can be the wrong one. If a deer or obstacle is in your lane, brake firmly and stay in your lane rather than swerving into oncoming traffic. At night, pull well off the road, turn on your four-way flashers, and stay with your vehicle if you can.",
+  "Reduced Visibility":"Avoid driving in fog or a snowstorm unless necessary. When visibility is limited, slow down and keep your headlights on LOW beam — high beams reflect off the fog and make it harder to see. If it's too hard to see, pull completely off the road, leave your lights on, and wait for it to clear.",
+  "Defensive Driving":"Good driving habits start the moment you get in the car. Over 90% of crashes are caused by driver error or inattention, so stay alert, keep both hands on the wheel, scan the road ahead, and drive courteously. Concentration is one of the most important elements of safe driving.",
+  "Scanning & Hazards":"Stay alert and scan the road ahead for developing hazards. Clues like a ball rolling into the street warn that a child may run out next — slow down and be ready to stop. Most crashes come from inattention, so keep your full attention on driving.",
+  "Emergencies":"THINK BEFORE YOU ACT in an emergency. In a tire blowout, hold the wheel tightly, steer straight, and ease off the accelerator — don't brake until the vehicle is back under control. Under-inflation is a common cause of blowouts.",
+  "Driver Condition":"Stop driving when you feel drowsy — don't fight it. Pull off at the first rest stop and nap if you're sleepy; 'stay-awake' drugs only make driving more hazardous. Take a break every 100 miles or two hours. Worry, anger, and illness also impair driving — if you're not fit to drive, let someone else.",
+  "Curves & Speed Control":"Slow down before entering a curve — not while you're in it — because of the danger of crossing the center line or running off the road. Enter slowly enough that you can accelerate slightly as you round it. Yellow curve and advisory-speed signs tell you a safe speed for the turn.",
+  "Graduated Driver License (GDL)":"Alabama's Graduated Driver License program phases in driving privileges for new drivers. A learner's-permit holder must be accompanied by a licensed driver at least 21 years old in the front seat. The Stage II restricted license limits late-night driving and the number of non-family passengers until the driver turns 18 or meets the requirements.",
+  "Occupant Protection":"Alabama's safety belt law requires every occupant, regardless of age, to be restrained. For best protection, wear the lap belt snugly across your hip bones. Wearing seat belts is the most effective way to reduce injuries in a crash.",
+  "Child Restraints":"Alabama's child restraint law requires children through age 15 to be restrained: a rear-facing seat until at least age 1 or 20 lb; a forward-facing seat until at least age 5 or 40 lb; a booster seat until age 6; and a seat belt until age 15.",
+  "Maintaining Your License":"Keep your license information current — report a change of name or address to the licensing authority within 30 days. Carry your license when driving and present it when a law-enforcement officer asks.",
+  "Distracted Driving Laws":"Texting while driving is illegal for all Alabama drivers — you may not use a wireless device to write, send, or read a text, message, or email while driving. Fines start at $25 and add two points to your record. Your number-one responsibility is driving.",
+  "Point System & Suspension":"Traffic convictions add points to your record (for example, following too closely is 3 points; failure to yield is 5). Accumulating 12–14 points in a two-year period brings a 60-day suspension, with longer suspensions for more points. Two or more moving violations on a GDL can also lead to suspension.",
+  "Implied Consent":"By driving on Alabama's public roads you've given implied consent to a chemical test of your blood, breath, or urine if you're lawfully arrested for DUI. Refusing the test results in an automatic suspension of your driver license.",
+  "DUI Limits":"It's illegal to drive with a blood alcohol concentration of 0.08% or more, or while under the influence. Lower limits apply to some drivers: 0.04% for commercial drivers and 0.02% for drivers under 21 and for school/daycare bus drivers. Impairment can begin before the legal limit.",
+  "Zero Tolerance (Under 21)":"For drivers under 21 it's unlawful to drive with a blood alcohol concentration of 0.02% or more — essentially any measurable alcohol. This 'zero tolerance' limit is far below the 0.08% adult limit.",
+  "Effects of Alcohol":"Alcohol is a depressant, not a stimulant. It causes drowsiness, blurred vision, and slowed reflexes and impairs judgment and coordination — and impairment can occur before the legal limit. Only time sobers you up; coffee, food, or a cold shower will not.",
+  "Medications":"Many prescription and over-the-counter drugs — including some allergy remedies and cold pills — can impair driving by causing drowsiness, inattention, or confusion. Ask your doctor or pharmacist about side effects, and never mix alcohol with drugs, which multiplies the impairment."
+};
+function manualText(ref){
+  const sub = ref.split("—").pop().trim();
+  return MANUAL_TEXT[sub] || null;
 }
 let state = null;
 let muted = false;
@@ -888,11 +971,12 @@ function answer(i){
     <div class="verdict">${verdict}${streakMsg}</div>
     <div class="explain">${correct ? "" : `<b>Correct answer:</b> ${q.choices[q.correctIdx].text}. `}${q.explain}</div>
     <div class="ref">📖 <b>Where to study:</b> ${q.ref}<br>
-      <a class="manual-link" href="${manualHref(q.ref)}" target="_blank" rel="noopener noreferrer">${manualLinkText(q.ref)}</a></div>
+      <button type="button" class="manual-link manual-open">Read it from the manual →</button></div>
     <div class="next-row">
       <button class="btn primary" id="nextBtn">${state.idx+1>=state.qs.length ? "See My Results →" : "Next Question →"}</button>
     </div>`;
   document.getElementById("feedSlot").appendChild(feed);
+  feed.querySelector(".manual-open").onclick = ()=> openManual(q.ref);
 
   const nextBtn = document.getElementById("nextBtn");
   nextBtn.onclick = ()=>{ sfx.click(); advance(); };
@@ -1010,16 +1094,16 @@ function renderResults(){
 function shareScore(score,total,pct,passed,gameOver){
   sfx.click();
   const status = gameOver ? "ran out of hearts" : (passed ? "PASSED ✅" : "is studying up");
-  const text = `🚗 I scored ${score}/${total} (${pct}%) on the Alabama Learner's Permit Practice Game and ${status}! Think you can pass? Give it a try!`;
+  const url = "https://nseamonbi.github.io/alabama-permit-practice/";
+  const text = `🚗 I scored ${score}/${total} (${pct}%) on the Alabama Learner's Permit Practice Game and ${status}! Think you can pass? Play here: ${url}`;
   if(navigator.share){
-    navigator.share({title:"Alabama Permit Practice", text}).catch(()=>copyText(text));
+    navigator.share({title:"Alabama Permit Practice", text, url}).catch(()=>copyText(text));
   }else{
     copyText(text);
   }
 }
 function copyText(text){
-  const note = "  (To share the game itself, send this HTML file to a friend!)";
-  const full = text + "\n" + note;
+  const full = text;
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(full).then(
       ()=>showToast("Copied! Paste it anywhere 📋"),
@@ -1042,6 +1126,27 @@ function showToast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
 }
+
+/* ---------- In-app manual passage popup ---------- */
+function openManual(ref){
+  sfx.click();
+  const sub = ref.split("—").pop().trim();
+  const passage = manualText(ref);
+  const page = manualRefPage(ref);
+  document.getElementById("mTitle").textContent = sub;
+  document.getElementById("mBody").textContent = passage || "See the Alabama Driver Manual for this topic.";
+  document.getElementById("mCite").textContent = "— Alabama Driver Manual" + (page ? `, p.${page}` : "");
+  const pdf = document.getElementById("mPdf");
+  pdf.href = manualHref(ref);
+  pdf.textContent = page ? `Open full manual to p.${page} (PDF) ↗` : "Open full manual (PDF) ↗";
+  document.getElementById("manualModal").hidden = false;
+  document.getElementById("mClose").focus();
+}
+function closeManual(){ document.getElementById("manualModal").hidden = true; }
+document.getElementById("mClose").onclick = closeManual;
+document.getElementById("manualModal").addEventListener("click", (e)=>{
+  if(e.target.id === "manualModal") closeManual();
+});
 
 /* ---------- Confetti ---------- */
 function launchConfetti(){
@@ -1077,6 +1182,11 @@ function launchConfetti(){
 
 /* ---------- Keyboard ---------- */
 document.addEventListener("keydown",(e)=>{
+  // manual popup: Escape closes it; swallow other keys so they don't reach the game
+  if(!document.getElementById("manualModal").hidden){
+    if(e.key==="Escape") closeManual();
+    return;
+  }
   if(!state || state.gameOver && false) {}
   // answering
   if(state && !state.answered && document.querySelector(".choice")){
@@ -1173,7 +1283,7 @@ const DRIVE_SCENARIOS = [
   { visual:"leadcar", ambiance:"rain", tag:"Following Distance", c:"safe",
     prompt:"It's raining and the car ahead is close. To keep a safe following distance you should:",
     choices:["Use a 1-second gap","Increase to a 4-second-or-more gap","Tailgate so others can't cut in","Match their bumper exactly"], a:1,
-    e:"Use the 3-second rule in good conditions and increase to 4+ seconds in rain — stopping distance grows on wet roads.",
+    e:"Alabama teaches the two-second rule in good conditions; increase to 4+ seconds in rain, since stopping distance grows on wet roads.",
     ref:"Safe Driving — Following Distance" },
 
   { visual:"sign", icon:"🔄", tag:"Roundabout", c:"rules",
@@ -1855,9 +1965,10 @@ function driveAnswer(i){
     <div class="verdict">${correct ? "✅ Nice driving!" + (state.streak>=3?` 🔥${state.streak}`:"") : "❌ Careful!"}</div>
     <div class="explain">${correct ? "" : `<b>Right move:</b> ${cur.choices[cur.correctIdx].text}. `}${cur.e}</div>
     <div class="ref">📖 <b>Where to study:</b> ${cur.ref}<br>
-      <a class="manual-link" href="${manualHref(cur.ref)}" target="_blank" rel="noopener noreferrer">${manualLinkText(cur.ref)}</a></div>
+      <button type="button" class="manual-link manual-open">Read it from the manual →</button></div>
     <div style="margin-top:10px"><button class="btn primary" id="nextBtn">${nextLabel}</button></div>`;
   ov.querySelector(".drive-q").appendChild(fb);
+  fb.querySelector(".manual-open").onclick = ()=> openManual(cur.ref);
   const nb = document.getElementById("nextBtn");
   nb.onclick = ()=>{ sfx.click(); driveNext(); };
   nb.focus();
