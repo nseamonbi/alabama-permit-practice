@@ -158,10 +158,12 @@
   .switch input:checked + .slider:before{transform:translateX(22px)}
 
   .foot{margin-top:14px;text-align:center;color:#9fb0cd;font-size:.74rem;line-height:1.4}
-  .topbar{display:flex;justify-content:flex-end;margin-bottom:6px}
+  .topbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:6px}
   .iconbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;
     width:40px;height:36px;font-size:1.05rem;cursor:pointer;display:grid;place-items:center}
   .iconbtn:hover{background:rgba(255,255,255,.22)}
+  #homeBtn{width:auto;padding:0 12px;font-size:.85rem;font-weight:800;letter-spacing:.2px}
+  #homeBtn[hidden]{display:none}
 
   /* Results */
   .result-emoji{font-size:54px;text-align:center;margin:4px 0 2px}
@@ -206,9 +208,7 @@
   .speedo .dot{color:#7bd6a3}
   .scene-hint{position:absolute;top:14%;left:50%;transform:translateX(-50%);background:rgba(11,37,69,.72);color:#dce7fb;
     font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:999px;white-space:nowrap}
-  .drive-overlay{position:absolute;left:0;right:0;bottom:0;padding:14px;
-    background:linear-gradient(180deg,rgba(11,37,69,0) 0%, rgba(11,37,69,.55) 28%, rgba(11,37,69,.9) 100%);
-    display:none}
+  .drive-overlay{display:none;margin-top:12px}
   .drive-overlay.show{display:block;animation:slideUp .3s ease both}
   @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
   .drive-q{background:#fff;border-radius:14px;padding:13px 13px 14px;box-shadow:0 10px 24px rgba(0,0,0,.3)}
@@ -238,6 +238,7 @@
 <canvas id="confetti"></canvas>
 <div class="wrap">
   <div class="topbar">
+    <button class="iconbtn" id="homeBtn" title="Main menu" aria-label="Main menu" hidden>⌂ Menu</button>
     <button class="iconbtn" id="muteBtn" title="Sound on/off" aria-label="Toggle sound">🔊</button>
   </div>
   <div id="app">
@@ -803,6 +804,7 @@ const app = document.getElementById("app");
 
 function renderStart(){
   stopDrive();
+  showHome(false);
   state = null;
   app.innerHTML = `
     <div class="card">
@@ -886,6 +888,7 @@ function heartsHTML(){
 }
 
 function renderQuestion(){
+  showHome(true);
   const q = state.qs[state.idx];
   const cat = CATS[q.cat];
   const total = state.qs.length;
@@ -1001,6 +1004,7 @@ function advance(){
 
 function renderResults(){
   stopDrive();
+  showHome(false);
   const answeredCount = state.gameOver ? (state.idx+1) : state.qs.length;
   const total = state.qs.length;
   const passNeeded = Math.ceil(total*PASS_PCT);
@@ -1208,6 +1212,15 @@ document.getElementById("muteBtn").onclick = function(){
   muted = !muted;
   this.textContent = muted ? "🔇" : "🔊";
   if(!muted) sfx.click();
+};
+
+/* ---------- Home / exit-to-menu button (shown during play) ---------- */
+function showHome(on){ const b = document.getElementById("homeBtn"); if(b) b.hidden = !on; }
+document.getElementById("homeBtn").onclick = function(){
+  const playing = state && !document.querySelector(".verdict-big");
+  if(!playing || confirm("Return to the main menu? Your current progress will be lost.")){
+    sfx.click(); renderStart();
+  }
 };
 
 /* ============================================================
@@ -1492,6 +1505,7 @@ function stopDrive(){
 function driveResize(){ if(driveActive) driveFit(); }
 
 function renderDrive(){
+  showHome(true);
   app.innerHTML = `
     <div class="card">
       <div class="brand" style="margin-bottom:10px"><span class="car">🛣️</span><h1>Road Trip</h1></div>
@@ -1511,8 +1525,8 @@ function renderDrive(){
         <canvas id="road"></canvas>
         <div class="speedo" id="dSpeedo"><span class="dot">▶</span> 0 mph</div>
         <div class="scene-hint" id="dHint">Buckle up — here we go! 🚗💨</div>
-        <div class="drive-overlay" id="dOverlay"></div>
       </div>
+      <div class="drive-overlay" id="dOverlay"></div>
       <div style="text-align:center;margin-top:12px">
         <button class="btn ghost" id="dQuit" style="padding:9px 18px;font-size:.85rem">⌂ Quit Trip</button>
       </div>
@@ -1928,6 +1942,7 @@ function enterDriveQuestion(){
     </div>`;
   ov.classList.add("show");
   ov.querySelectorAll(".choice").forEach(b=> b.onclick = ()=> driveAnswer(parseInt(b.dataset.i,10)));
+  try{ ov.scrollIntoView({behavior:"smooth", block:"center"}); }catch(e){}
 }
 
 function driveAnswer(i){
