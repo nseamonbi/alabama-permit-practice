@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Alabama Learner's Permit — Practice Game 🚗</title>
+<style>
+  :root{
+    --navy:#0b2545;
+    --navy2:#13315c;
+    --crimson:#9e1b32;       /* Alabama crimson */
+    --crimson-d:#7c1426;
+    --gold:#ffd166;
+    --green:#1f9d55;
+    --green-l:#d6f5e3;
+    --red:#e03131;
+    --red-l:#ffe3e3;
+    --bg:#eef3fb;
+    --card:#ffffff;
+    --ink:#13233d;
+    --muted:#5b6b86;
+    --line:#dde6f4;
+    --shadow:0 10px 30px rgba(11,37,69,.16);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #1b3a66 0%, rgba(27,58,102,0) 60%),
+      linear-gradient(160deg,#0b2545 0%, #13315c 45%, #0b2545 100%);
+    color:var(--ink);
+    min-height:100dvh;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:18px 14px calc(28px + env(safe-area-inset-bottom));
+  }
+  .wrap{width:100%;max-width:640px}
+  .card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px 20px;animation:pop .35s cubic-bezier(.2,.9,.3,1.3) both;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}
+    30%,50%,70%{transform:translateX(-5px)}40%,60%{transform:translateX(5px)}}
+
+  /* Header / brand */
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:6px}
+  .brand .car{font-size:30px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.25))}
+  .brand h1{font-size:1.32rem;margin:0;letter-spacing:.2px;color:var(--navy);text-align:center}
+  .sub{color:var(--muted);text-align:center;margin:2px 0 16px;font-size:.92rem}
+
+  /* Top status bar (during quiz) */
+  .statusbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .hearts{font-size:1.25rem;letter-spacing:2px;min-height:1.4em}
+  .heart{transition:transform .3s ease, opacity .3s ease;display:inline-block}
+  .heart.lost{opacity:.25;transform:scale(.8) rotate(-12deg)}
+  .pill{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.85rem;color:var(--navy)}
+  .pill .lbl{color:var(--muted);font-weight:600}
+  .streak{color:var(--crimson)}
+
+  .progress{height:10px;background:#e7eefb;border-radius:999px;overflow:hidden;margin:4px 0 16px;border:1px solid var(--line)}
+  .progress > span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--crimson),#d63a52);transition:width .4s ease}
+
+  .qmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .cat{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#fff;background:var(--navy2);padding:4px 10px;border-radius:999px}
+  .qnum{font-size:.8rem;color:var(--muted);font-weight:700}
+
+  .question{font-size:1.16rem;line-height:1.4;font-weight:700;margin:6px 0 4px}
+  .signbox{display:flex;justify-content:center;margin:14px 0 2px}
+  .signbox svg{filter:drop-shadow(0 6px 12px rgba(11,37,69,.25))}
+
+  .choices{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .choice{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:var(--card);border:2px solid var(--line);border-radius:14px;
+    padding:13px 14px;font-size:1rem;color:var(--ink);cursor:pointer;
+    transition:border-color .15s, background .15s, transform .08s;font-weight:600;
+  }
+  .choice:hover:not(:disabled){border-color:var(--navy2);background:#f6f9ff}
+  .choice:active:not(:disabled){transform:scale(.99)}
+  .choice .key{flex:0 0 28px;height:28px;border-radius:8px;background:var(--bg);border:1px solid var(--line);
+    display:grid;place-items:center;font-weight:800;color:var(--navy);font-size:.85rem}
+  .choice:disabled{cursor:default}
+  .choice.correct{border-color:var(--green);background:var(--green-l)}
+  .choice.correct .key{background:var(--green);color:#fff;border-color:var(--green)}
+  .choice.wrong{border-color:var(--red);background:var(--red-l);animation:shake .5s}
+  .choice.wrong .key{background:var(--red);color:#fff;border-color:var(--red)}
+  .choice.muted-c{opacity:.6}
+
+  .feedback{margin-top:14px;border-radius:14px;padding:14px;border:1px solid var(--line);background:var(--bg);animation:pop .3s both}
+  .feedback.ok{background:var(--green-l);border-color:#a8e6c5}
+  .feedback.no{background:var(--red-l);border-color:#ffc9c9}
+  .feedback .verdict{font-weight:800;font-size:1.02rem;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .feedback .explain{color:#2a3a55;line-height:1.45;font-size:.95rem}
+  .feedback .ref{margin-top:10px;font-size:.88rem;color:var(--navy);background:#fff;border:1px dashed var(--navy2);
+    border-radius:10px;padding:9px 11px;font-weight:600}
+  .feedback .ref b{color:var(--crimson)}
+  .manual-link{display:inline-block;margin-top:7px;color:var(--crimson);font-weight:800;text-decoration:underline;
+    text-underline-offset:2px;font-size:.84rem}
+  .manual-link:hover{color:var(--crimson-d)}
+  .foot a{color:#bcd0f0;text-decoration:underline;text-underline-offset:2px}
+  .foot a:hover{color:#fff}
+  .manual-btn{display:block;width:100%;margin-top:12px;text-align:center;text-decoration:none;font-size:.95rem}
+
+  /* Buttons */
+  .btn{
+    appearance:none;border:none;cursor:pointer;font-weight:800;border-radius:14px;
+    padding:14px 18px;font-size:1.02rem;transition:transform .08s, filter .15s, box-shadow .15s;
+    box-shadow:0 6px 16px rgba(158,27,50,.28);
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,var(--crimson),var(--crimson-d));color:#fff;width:100%}
+  .btn.primary:hover{filter:brightness(1.06)}
+  .btn.ghost{background:#fff;color:var(--navy);border:2px solid var(--line);box-shadow:none}
+  .btn.ghost:hover{border-color:var(--navy2);background:#f6f9ff}
+  .btn.gold{background:linear-gradient(180deg,#ffd166,#f0b429);color:#5a3e00;box-shadow:0 6px 16px rgba(240,180,41,.35)}
+  .next-row{margin-top:14px}
+
+  /* Start screen */
+  .how{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px;color:#2a3a55;font-size:.94rem;line-height:1.5}
+  .how b{color:var(--crimson)}
+  .modes{display:flex;flex-direction:column;gap:12px}
+  .mode{
+    text-align:left;border:2px solid var(--line);border-radius:16px;padding:16px;background:#fff;cursor:pointer;
+    transition:border-color .15s, transform .08s, box-shadow .15s;display:flex;gap:14px;align-items:center;
+  }
+  .mode:hover{border-color:var(--crimson);box-shadow:0 8px 20px rgba(158,27,50,.12)}
+  .mode:active{transform:scale(.99)}
+  .mode .emoji{font-size:30px;flex:0 0 auto}
+  .mode h3{margin:0 0 3px;font-size:1.08rem;color:var(--navy)}
+  .mode p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.4}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;
+    background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .toggle-row .t-txt{font-size:.9rem}
+  .toggle-row .t-txt small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+  /* iOS-style switch */
+  .switch{position:relative;width:52px;height:30px;flex:0 0 auto}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#c8d3e8;border-radius:999px;transition:.2s;cursor:pointer}
+  .slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+  .switch input:checked + .slider{background:var(--crimson)}
+  .switch input:checked + .slider:before{transform:translateX(22px)}
+
+  .foot{margin-top:14px;text-align:center;color:#9fb0cd;font-size:.74rem;line-height:1.4}
+  .topbar{display:flex;justify-content:flex-end;margin-bottom:6px}
+  .iconbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;
+    width:40px;height:36px;font-size:1.05rem;cursor:pointer;display:grid;place-items:center}
+  .iconbtn:hover{background:rgba(255,255,255,.22)}
+
+  /* Results */
+  .result-emoji{font-size:54px;text-align:center;margin:4px 0 2px}
+  .verdict-big{text-align:center;font-size:1.7rem;font-weight:900;margin:2px 0}
+  .verdict-big.pass{color:var(--green)}
+  .verdict-big.fail{color:var(--crimson)}
+  .scoreline{text-align:center;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .scorebig{text-align:center;font-size:2.6rem;font-weight:900;color:var(--navy);line-height:1}
+  .scorebig small{font-size:1rem;color:var(--muted);font-weight:700}
+  .passbar{position:relative;height:16px;border-radius:999px;background:#e7eefb;border:1px solid var(--line);margin:34px 0 6px;overflow:visible}
+  .passbar > span{display:block;height:100%;border-radius:999px;transition:width .8s ease}
+  .passbar .mark{position:absolute;top:-6px;bottom:-6px;width:3px;background:var(--navy);border-radius:2px}
+  .passbar .mark:after{content:"80% to pass";position:absolute;top:-20px;left:50%;transform:translateX(-50%);
+    font-size:.66rem;font-weight:800;color:var(--navy);white-space:nowrap}
+  .breakdown{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+  .breakdown h4{margin:0 0 10px;font-size:.95rem;color:var(--navy)}
+  .brow{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:.9rem}
+  .brow .bname{flex:0 0 auto;width:130px;color:#2a3a55;font-weight:700;font-size:.82rem}
+  .brow .bbar{flex:1;height:9px;background:#e7eefb;border-radius:999px;overflow:hidden}
+  .brow .bbar > span{display:block;height:100%;background:var(--navy2)}
+  .brow .bscore{flex:0 0 auto;font-weight:800;color:var(--navy);font-size:.82rem;width:34px;text-align:right}
+  .msg{text-align:center;margin:14px 0 2px;color:#2a3a55;font-weight:600;line-height:1.45}
+  .btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .btn-grid .full{grid-column:1 / -1}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;
+    padding:11px 18px;border-radius:999px;font-weight:700;font-size:.9rem;opacity:0;pointer-events:none;transition:.3s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* Confetti */
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
+
+  /* ---- Road Trip (driving) mode ---- */
+  .route{display:flex;align-items:center;gap:8px;margin:2px 0 12px}
+  .route .track{position:relative;flex:1;height:8px;background:#e7eefb;border:1px solid var(--line);border-radius:999px}
+  .route .track > #dFill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--green),#7bd6a3);border-radius:999px;transition:width .5s ease}
+  .route .car-mark{position:absolute;top:-9px;transform:translateX(-50%);transition:left .5s ease;font-size:1rem}
+  .route .flag{font-size:1.1rem}
+  .stage{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#3a7d44;box-shadow:inset 0 0 0 2px rgba(0,0,0,.04)}
+  #road{display:block;width:100%;height:auto}
+  .speedo{position:absolute;top:10px;left:10px;background:rgba(11,37,69,.78);color:#fff;font-weight:800;
+    font-size:.8rem;padding:5px 10px;border-radius:999px;letter-spacing:.3px;backdrop-filter:blur(2px)}
+  .speedo .dot{color:#7bd6a3}
+  .scene-hint{position:absolute;top:14%;left:50%;transform:translateX(-50%);background:rgba(11,37,69,.72);color:#dce7fb;
+    font-size:.78rem;font-weight:700;padding:6px 12px;border-radius:999px;white-space:nowrap}
+  .drive-overlay{position:absolute;left:0;right:0;bottom:0;padding:14px;
+    background:linear-gradient(180deg,rgba(11,37,69,0) 0%, rgba(11,37,69,.55) 28%, rgba(11,37,69,.9) 100%);
+    display:none}
+  .drive-overlay.show{display:block;animation:slideUp .3s ease both}
+  @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+  .drive-q{background:#fff;border-radius:14px;padding:13px 13px 14px;box-shadow:0 10px 24px rgba(0,0,0,.3)}
+  .drive-q .prompt{font-weight:800;font-size:1rem;line-height:1.35;margin-bottom:4px;color:var(--ink)}
+  .drive-q .prompt .tag{display:inline-block;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+    color:#fff;background:var(--crimson);padding:2px 8px;border-radius:999px;margin-bottom:7px}
+  .drive-q .choices{margin-top:10px;gap:8px}
+  .drive-q .choice{padding:11px 12px;font-size:.95rem}
+  .drive-feedback{border-radius:12px;padding:12px;margin-top:2px}
+  .drive-feedback.ok{background:var(--green-l);border:1px solid #a8e6c5}
+  .drive-feedback.no{background:var(--red-l);border:1px solid #ffc9c9}
+  .drive-feedback .verdict{font-weight:800;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+  .drive-feedback .explain{font-size:.9rem;line-height:1.4;color:#2a3a55}
+  .drive-feedback .ref{margin-top:9px;font-size:.84rem;color:var(--navy);background:#fff;border:1px dashed var(--navy2);border-radius:9px;padding:8px 10px;font-weight:600}
+  .drive-feedback .ref b{color:var(--crimson)}
+
+  @media (max-width:430px){
+    .card{padding:18px 15px}
+    .question{font-size:1.08rem}
+    .brand h1{font-size:1.15rem}
+    .brow .bname{width:104px}
+    .drive-q .prompt{font-size:.95rem}
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+  <div class="topbar">
+    <button class="iconbtn" id="muteBtn" title="Sound on/off" aria-label="Toggle sound">🔊</button>
+  </div>
+  <div id="app">
+    <!-- Fallback shown only when JavaScript hasn't run (e.g. an iOS file-preview / Quick Look).
+         A real browser runs the script below, which replaces all of this with the game. -->
+    <div class="card" id="nojsCard">
+      <div class="brand"><span class="car">🚗</span><h1>Alabama Permit Practice</h1></div>
+      <p class="sub" style="margin-bottom:14px">A fun way to get ready for the Learner's Permit test</p>
+      <div class="how" style="margin-bottom:0">
+        <b>📱 Almost there!</b> This game runs in a web <b>browser</b>, and right now it looks like
+        it opened in a <b>file preview</b> that can't start it.
+        <div style="margin-top:10px">
+          <b>On an iPhone/iPad:</b> tap the <b>⋯</b> or share icon at the top, then choose
+          <b>“Open in Safari”</b> (or Chrome). If you don't see that option, ask whoever shared it
+          for the <b>web link</b> version.
+        </div>
+        <div style="margin-top:10px">
+          <b>On a computer:</b> double-click the file, or drag it onto a browser window
+          (Chrome, Edge, Firefox, or Safari).
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot" id="globalFoot">
+    Unofficial study aid · Not affiliated with ALEA. The official
+    <a href="https://www.alea.gov/sites/default/files/ALEA%20DL%20Manual.pdf" target="_blank" rel="noopener noreferrer"><i>Alabama Driver Manual</i> (PDF)</a>
+    and exam are authoritative.
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Alabama Learner's Permit — Practice Game
+   Single-file. No dependencies. Works offline.
+   ============================================================ */
+
+/* ---------- Sign drawing helpers (inline SVG) ---------- */
+const SIGNS = {
+  stop: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="red octagon sign">
+    <polygon points="30,4 70,4 96,30 96,70 70,96 30,96 4,70 4,30" fill="#c1121f" stroke="#fff" stroke-width="4"/>
+    <text x="50" y="58" text-anchor="middle" font-size="22" font-weight="900" fill="#fff" font-family="Arial">STOP</text></svg>`,
+  yield: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="downward triangle sign">
+    <polygon points="50,92 6,12 94,12" fill="#fff" stroke="#c1121f" stroke-width="9"/>
+    <text x="50" y="44" text-anchor="middle" font-size="15" font-weight="900" fill="#c1121f" font-family="Arial">YIELD</text></svg>`,
+  pentagon: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="five sided yellow-green sign">
+    <polygon points="50,4 94,38 77,94 23,94 6,38" fill="#c6e000" stroke="#333" stroke-width="3"/>
+    <circle cx="38" cy="52" r="7" fill="#222"/><circle cx="62" cy="52" r="7" fill="#222"/>
+    <rect x="34" y="62" width="32" height="6" rx="3" fill="#222"/></svg>`,
+  railroad: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="round yellow railroad crossing sign">
+    <circle cx="50" cy="50" r="46" fill="#f7c600" stroke="#222" stroke-width="3"/>
+    <line x1="18" y1="82" x2="82" y2="18" stroke="#000" stroke-width="6"/>
+    <line x1="18" y1="18" x2="82" y2="82" stroke="#000" stroke-width="6"/>
+    <text x="33" y="46" font-size="20" font-weight="900" fill="#000" font-family="Arial">R</text>
+    <text x="55" y="64" font-size="20" font-weight="900" fill="#000" font-family="Arial">R</text></svg>`,
+  diamond: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="yellow diamond warning sign with curve arrow">
+    <polygon points="50,5 95,50 50,95 5,50" fill="#f7c600" stroke="#222" stroke-width="3"/>
+    <path d="M40 74 C40 54 60 50 60 34" fill="none" stroke="#000" stroke-width="6"/>
+    <polygon points="60,24 52,38 68,38" fill="#000"/></svg>`,
+  workzone: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="orange diamond work zone sign">
+    <polygon points="50,5 95,50 50,95 5,50" fill="#ff7a00" stroke="#222" stroke-width="3"/>
+    <rect x="44" y="30" width="12" height="30" fill="#000"/><circle cx="50" cy="68" r="7" fill="#000"/></svg>`,
+  noU: `<svg width="120" height="120" viewBox="0 0 100 100" role="img" aria-label="no U-turn regulatory sign">
+    <rect x="16" y="8" width="68" height="84" rx="8" fill="#fff" stroke="#222" stroke-width="3"/>
+    <path d="M38 70 V46 a12 12 0 0 1 24 0 V62" fill="none" stroke="#111" stroke-width="7"/>
+    <polygon points="62,70 54,58 70,58" fill="#111"/>
+    <circle cx="50" cy="50" r="34" fill="none" stroke="#c1121f" stroke-width="7"/>
+    <line x1="26" y1="74" x2="74" y2="26" stroke="#c1121f" stroke-width="7"/></svg>`
+};
+
+/* ---------- Question Bank ---------- */
+/* category keys: signs, rules, safe, license, alcohol
+   manualRef = descriptive Alabama Driver Manual section */
+const BANK = [
+  /* ----- SIGNS, SIGNALS & MARKINGS ----- */
+  { c:"signs", sign:"stop",
+    q:"This sign means you must:",
+    choices:["Slow down only if cars are coming","Come to a complete stop, then proceed when safe","Yield to traffic on your left","Merge without stopping"],
+    a:1, e:"A red octagon always means STOP. Come to a full stop at the stop line, crosswalk, or before entering the intersection, then go only when it's safe.",
+    ref:"Signals, Signs & Markings — Regulatory Signs" },
+
+  { c:"signs", sign:"yield",
+    q:"A driver approaching this red-and-white triangular sign must:",
+    choices:["Stop and wait for a green light","Slow down and give the right-of-way to other traffic","Speed up to merge quickly","Honk and continue"],
+    a:1, e:"A YIELD sign means slow down, be ready to stop, and let cross traffic or pedestrians go first. Stop only if necessary to avoid a conflict.",
+    ref:"Signals, Signs & Markings — Regulatory Signs" },
+
+  { c:"signs", sign:"pentagon",
+    q:"A five-sided (pentagon) sign warns you that you are approaching:",
+    choices:["A hospital","A school zone or school crossing","A rest area","A toll booth"],
+    a:1, e:"The five-sided pentagon is the school advance-warning / school-crossing sign. Slow down and watch for children.",
+    ref:"Signals, Signs & Markings — Warning Signs" },
+
+  { c:"signs", sign:"railroad",
+    q:"This round yellow sign with an 'X' and two R's means:",
+    choices:["Hospital ahead","Railroad crossing ahead","Road ends ahead","Rest area ahead"],
+    a:1, e:"The round yellow 'RXR' sign warns that a railroad crossing is ahead. Be prepared to stop for trains.",
+    ref:"Signals, Signs & Markings — Warning Signs" },
+
+  { c:"signs", sign:"diamond",
+    q:"What does a yellow diamond-shaped sign generally indicate?",
+    choices:["A regulation you must obey by law","A warning about road conditions ahead","A destination or service","A construction worker is present"],
+    a:1, e:"Yellow diamond signs are WARNING signs — they alert you to hazards or changes ahead such as curves, intersections, or merges.",
+    ref:"Signals, Signs & Markings — Warning Signs" },
+
+  { c:"signs", sign:"workzone",
+    q:"An orange sign or orange cones on the road usually mean:",
+    choices:["A scenic route","A construction or work zone — slow down","A no-parking area","A bike lane"],
+    a:1, e:"Orange is the color for construction and maintenance work zones. Reduce speed, watch for workers, and expect changed traffic patterns. Fines are often doubled in work zones.",
+    ref:"Signals, Signs & Markings — Work Zone Signs" },
+
+  { c:"signs", sign:"noU",
+    q:"This sign tells you that you may NOT:",
+    choices:["Turn right","Make a U-turn","Pass other vehicles","Park here"],
+    a:1, e:"A red circle and slash over a U-shaped arrow means U-turns are prohibited at that location.",
+    ref:"Signals, Signs & Markings — Regulatory Signs" },
+
+  { c:"signs",
+    q:"A flashing RED traffic signal means:",
+    choices:["Speed up to clear the intersection","Stop, then proceed when it is safe (like a stop sign)","The light is broken — ignore it","Yield only"],
+    a:1, e:"A flashing red light is treated exactly like a stop sign: come to a full stop, then go when it's safe.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { c:"signs",
+    q:"A flashing YELLOW traffic signal means:",
+    choices:["Stop completely","Slow down and proceed with caution","Reverse direction","Park immediately"],
+    a:1, e:"A flashing yellow light means slow down and proceed carefully — you do not have to stop, but watch for cross traffic.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { c:"signs",
+    q:"A steady YELLOW traffic light means:",
+    choices:["Speed up to beat the red","The light is about to turn red — stop if you can do so safely","Go, you have the right-of-way","Make a U-turn now"],
+    a:1, e:"A steady yellow warns that the signal is changing to red. Stop if you can do so safely; do not try to race through.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { c:"signs",
+    q:"On a two-way road, a solid YELLOW line on your side of the center means:",
+    choices:["You may pass when clear","Passing is not allowed on your side","The road is closed","Parking is allowed"],
+    a:1, e:"A solid yellow line on your side means no passing. Yellow lines separate traffic moving in opposite directions.",
+    ref:"Signals, Signs & Markings — Pavement Markings" },
+
+  { c:"signs",
+    q:"White lane lines on a roadway separate:",
+    choices:["Traffic moving in opposite directions","Lanes of traffic moving in the same direction","The road from the shoulder only","Bike lanes only"],
+    a:1, e:"White lines separate lanes of traffic going the SAME direction. Yellow lines separate OPPOSING directions.",
+    ref:"Signals, Signs & Markings — Pavement Markings" },
+
+  { c:"signs",
+    q:"A driver wanting to signal a LEFT turn with hand signals would:",
+    choices:["Extend the arm straight out to the left","Extend the arm upward","Extend the arm downward","Wave the arm in a circle"],
+    a:0, e:"Hand signals: arm straight out = left turn; arm bent up = right turn; arm bent down = stopping/slowing.",
+    ref:"Signals, Signs & Markings — Hand Signals" },
+
+  { c:"signs",
+    q:"A hand signal with the arm bent at the elbow pointing UPWARD means the driver intends to:",
+    choices:["Stop","Turn right","Turn left","Back up"],
+    a:1, e:"Arm bent upward at the elbow signals a RIGHT turn. Arm bent downward means slowing or stopping.",
+    ref:"Signals, Signs & Markings — Hand Signals" },
+
+  { c:"signs",
+    q:"A red octagon shape is used ONLY for which kind of sign?",
+    choices:["Yield","Stop","School zone","Speed limit"],
+    a:1, e:"The eight-sided (octagon) shape is reserved exclusively for STOP signs, so it's recognizable even if covered by snow.",
+    ref:"Signals, Signs & Markings — Sign Shapes & Colors" },
+
+  /* ----- RULES OF THE ROAD ----- */
+  { c:"rules",
+    q:"At a four-way stop where two cars arrive at exactly the same time, who has the right-of-way?",
+    choices:["The faster car","The vehicle on the right","The larger vehicle","The car that honks first"],
+    a:1, e:"When two vehicles reach a four-way stop at the same time, the driver on the LEFT yields to the driver on the RIGHT.",
+    ref:"Rules of the Road — Right-of-Way" },
+
+  { c:"rules",
+    q:"When you reach a roundabout, you should:",
+    choices:["Stop in the circle to let others in","Travel clockwise","Yield to traffic already in the circle and travel counter-clockwise","Always come to a complete stop before entering"],
+    a:2, e:"In a roundabout, traffic flows counter-clockwise (to the right). Yield to vehicles already circulating, then enter when there's a gap.",
+    ref:"Rules of the Road — Intersections & Roundabouts" },
+
+  { c:"rules",
+    q:"When you want to change lanes, you should check your mirrors, signal, and:",
+    choices:["Rely only on your mirrors","Glance over your shoulder to check your blind spot","Close your eyes and merge","Speed up so others get out of the way"],
+    a:1, e:"Mirrors do not show everything. Always glance over your shoulder to check the blind spot before changing lanes.",
+    ref:"Rules of the Road — Changing Lanes & Passing" },
+
+  { c:"rules",
+    q:"You must stop for a school bus with flashing red lights and an extended stop arm when:",
+    choices:["Only if children are visible","You are traveling in the same direction on an undivided road","Never — just slow down","Only at night"],
+    a:1, e:"On an undivided roadway, traffic in BOTH directions must stop for a school bus with flashing red lights and an extended stop sign. Wait until the lights stop flashing.",
+    ref:"Rules of the Road — School Buses" },
+
+  { c:"rules",
+    q:"When approaching a railroad crossing with flashing red lights and a lowered gate, you must:",
+    choices:["Drive around the gate if no train is visible","Stop and wait until the gate rises and lights stop","Speed up to cross before the train","Honk and proceed"],
+    a:1, e:"Never drive around a lowered gate. Stop at least 15 feet from the tracks and wait until the gate lifts and the lights stop flashing.",
+    ref:"Rules of the Road — Railroad Crossings" },
+
+  { c:"rules",
+    q:"Unless otherwise posted, what is the general speed limit in a residential or urban district in Alabama?",
+    choices:["15 mph","25 mph","45 mph","65 mph"],
+    a:1, e:"Unless signs say otherwise, the default urban/residential speed limit is 25 mph. Always obey posted limits, which override the default.",
+    ref:"Rules of the Road — Speed Limits" },
+
+  { c:"rules",
+    q:"When turning left at an intersection, you should:",
+    choices:["Turn from the lane closest to the curb on the right","Yield to oncoming traffic and pedestrians before turning","Never use your turn signal","Turn as wide as possible into any lane"],
+    a:1, e:"A left-turning driver must yield to oncoming traffic and pedestrians, then complete the turn into the proper lane.",
+    ref:"Rules of the Road — Turning" },
+
+  { c:"rules",
+    q:"When you see an emergency vehicle approaching with lights and siren on, you should:",
+    choices:["Speed up to get out of the area","Pull over to the right edge of the road and stop","Stop immediately in your lane","Continue at the same speed"],
+    a:1, e:"Pull over to the right, clear of intersections, and stop until the emergency vehicle passes.",
+    ref:"Rules of the Road — Emergency Vehicles" },
+
+  { c:"rules",
+    q:"Alabama's 'Move Over' law requires you to do what when approaching a stopped emergency, law-enforcement, or utility vehicle with flashing lights?",
+    choices:["Speed up past it","Move over a lane if possible, or slow down if you cannot","Stop in your lane","Turn off your headlights"],
+    a:1, e:"The Move Over Act requires drivers to vacate the lane nearest the stopped vehicle when safe; if you can't change lanes, slow down well below the speed limit.",
+    ref:"Rules of the Road — Move Over Law" },
+
+  { c:"rules",
+    q:"You may pass another vehicle on a two-lane road when:",
+    choices:["There is a solid yellow line on your side","There is a broken (dashed) yellow line on your side and the way is clear","You are on a hill or curve","You are within 100 feet of an intersection"],
+    a:1, e:"A broken yellow line on your side means passing is allowed when it's safe and the oncoming lane is clear. Never pass on a solid line, hill, or curve.",
+    ref:"Rules of the Road — Passing" },
+
+  { c:"rules",
+    q:"You may NOT park within how many feet of a fire hydrant?",
+    choices:["5 feet","10 feet","15 feet","50 feet"],
+    a:2, e:"Do not park within 15 feet of a fire hydrant so emergency crews can reach it.",
+    ref:"Rules of the Road — Parking" },
+
+  { c:"rules",
+    q:"When parking uphill next to a curb, you should turn your front wheels:",
+    choices:["Toward the curb","Away from the curb (toward the street)","Straight ahead","It doesn't matter"],
+    a:1, e:"Uphill WITH a curb: turn wheels away from the curb so the tire backs into the curb if the car rolls. Downhill (or uphill with no curb): turn wheels toward the curb/edge.",
+    ref:"Rules of the Road — Parking" },
+
+  { c:"rules",
+    q:"A solid white line along the right edge of the highway marks:",
+    choices:["The center of the road","The edge of the roadway / shoulder","A passing zone","A bike lane only"],
+    a:1, e:"The solid white edge line marks the right edge of the travel lane (the shoulder boundary).",
+    ref:"Rules of the Road — Pavement Markings" },
+
+  /* ----- SAFE DRIVING ----- */
+  { c:"safe",
+    q:"The recommended minimum following distance under good conditions is at least:",
+    choices:["A half-car length","One car length","A 3-second gap behind the vehicle ahead","Whatever feels comfortable"],
+    a:2, e:"Use the 3-second rule: when the car ahead passes a fixed point, you should not reach it for at least 3 seconds. Increase the gap in poor conditions.",
+    ref:"Safe Driving — Following Distance" },
+
+  { c:"safe",
+    q:"In rain, snow, or fog you should increase your following distance because:",
+    choices:["Your car uses more fuel","Stopping distance increases and visibility decreases","The speed limit goes up","Other drivers slow down for you"],
+    a:1, e:"Wet or slick roads lengthen stopping distance and reduce traction and visibility, so allow extra space — 4 seconds or more.",
+    ref:"Safe Driving — Adverse Conditions" },
+
+  { c:"safe",
+    q:"If your car begins to hydroplane on a wet road, you should:",
+    choices:["Brake hard immediately","Accelerate to regain control","Ease off the gas and steer straight until you regain traction","Turn the wheel sharply"],
+    a:2, e:"During hydroplaning, take your foot off the gas, avoid hard braking or sharp steering, and keep the wheel steady until the tires grip again.",
+    ref:"Safe Driving — Skids & Hydroplaning" },
+
+  { c:"safe",
+    q:"When driving at night, you should:",
+    choices:["Use high beams when within 200 ft of an oncoming car","Dim your high beams for oncoming traffic and when following closely","Drive faster to spend less time in the dark","Wear sunglasses"],
+    a:1, e:"Switch to low beams when within about 500 feet of oncoming traffic or 200 feet behind another vehicle so you don't blind other drivers.",
+    ref:"Safe Driving — Night Driving & Headlights" },
+
+  { c:"safe",
+    q:"If an oncoming vehicle's high beams are blinding you at night, you should:",
+    choices:["Stare into the lights","Look toward the right edge of your lane until the car passes","Turn on your own high beams","Close your eyes briefly"],
+    a:1, e:"Avoid looking directly at oncoming headlights. Glance toward the right edge of the road to keep your lane position until the vehicle passes.",
+    ref:"Safe Driving — Night Driving" },
+
+  { c:"safe",
+    q:"The single biggest factor in safe driving and avoiding crashes is:",
+    choices:["Having a fast car","Staying alert and avoiding distractions","Driving with one hand","Using cruise control everywhere"],
+    a:1, e:"Most crashes involve driver error or distraction. Keeping your attention on the road and scanning ahead prevents collisions.",
+    ref:"Safe Driving — Defensive Driving" },
+
+  { c:"safe",
+    q:"What should you do if your vehicle's wheels drift off the pavement onto the shoulder?",
+    choices:["Brake hard and jerk the wheel back","Ease off the gas, hold the wheel firmly, and steer back gently when slowed","Speed up and swerve back","Stop in the middle of the road"],
+    a:1, e:"Don't panic or jerk the wheel. Ease off the gas, keep a firm grip, and steer back onto the road gently once you've slowed.",
+    ref:"Safe Driving — Emergencies" },
+
+  { c:"safe",
+    q:"Drowsy driving is dangerous because it:",
+    choices:["Has no real effect on driving","Slows reaction time and can cause you to fall asleep at the wheel","Only matters on long trips","Improves focus"],
+    a:1, e:"Fatigue slows reaction time and judgment much like alcohol. If you're tired, pull over to rest — open windows and radio are not real fixes.",
+    ref:"Safe Driving — Driver Condition" },
+
+  /* ----- LICENSING & LAWS ----- */
+  { c:"license",
+    q:"While driving on an Alabama learner's permit, you must be accompanied by:",
+    choices:["No one — you may drive alone","A licensed driver at least 21 years old in the front passenger seat","Any friend with a license","A driver at least 16 years old"],
+    a:1, e:"A learner's-permit holder must have a licensed driver who is 21 or older seated in the front passenger seat at all times.",
+    ref:"Your License to Drive — Graduated Driver License (GDL)" },
+
+  { c:"license",
+    q:"Alabama's seat belt law requires:",
+    choices:["Only the driver to buckle up","The driver and front-seat passengers to wear seat belts","No one — belts are optional","Only children to buckle up"],
+    a:1, e:"Alabama law requires the driver and front-seat occupants to wear seat belts; all passengers under 15 must be restrained no matter where they sit.",
+    ref:"Your License to Drive — Occupant Protection" },
+
+  { c:"license",
+    q:"Under the Graduated Driver License (GDL) Stage II restrictions, a newly licensed teen generally may NOT:",
+    choices:["Ever drive at night","Carry more than one non-family passenger or drive late at night (with limited exceptions)","Drive to school","Drive with a parent"],
+    a:1, e:"Stage II restricts teens from driving between midnight and 6 a.m. and from carrying more than one non-family passenger, with school/work/emergency exceptions.",
+    ref:"Your License to Drive — Graduated Driver License (GDL)" },
+
+  { c:"license",
+    q:"If you change your address, Alabama law requires you to notify the licensing authority within:",
+    choices:["24 hours","30 days","6 months","1 year"],
+    a:1, e:"You must report a change of address within 30 days to keep your license information current.",
+    ref:"Your License to Drive — Maintaining Your License" },
+
+  { c:"license",
+    q:"Using a hand-held cell phone to text while driving in Alabama is:",
+    choices:["Always allowed","Illegal for all drivers (texting while driving is banned)","Allowed only on highways","Allowed if you drive slowly"],
+    a:1, e:"Texting while driving is illegal for all Alabama drivers. Permit and intermediate-license teens face additional restrictions on phone use.",
+    ref:"Your License to Drive — Distracted Driving Laws" },
+
+  { c:"license",
+    q:"In Alabama, accumulating too many points on your driving record can result in:",
+    choices:["A cash reward","Suspension of your driving privileges","A faster speed limit","Nothing at all"],
+    a:1, e:"Traffic convictions add points to your record. Accumulating 12–14 points in a two-year period can lead to license suspension.",
+    ref:"Your License to Drive — Point System & Suspension" },
+
+  { c:"license",
+    q:"By driving on Alabama roads, the 'Implied Consent' law means you have agreed to:",
+    choices:["Pay tolls","Submit to a chemical test (breath/blood) if lawfully arrested for DUI","Allow searches of your home","Give up your license on request"],
+    a:1, e:"Under Implied Consent, driving means you've consented to chemical testing if arrested for DUI. Refusing results in an automatic license suspension.",
+    ref:"Your License to Drive — Implied Consent" },
+
+  { c:"license",
+    q:"A child who is younger and smaller than the limits in Alabama's child-restraint law must ride in:",
+    choices:["The front seat with a lap belt","An appropriate car seat or booster seat","Anyone's lap","The cargo area"],
+    a:1, e:"Alabama's child passenger safety law requires age/size-appropriate car seats and booster seats for young children until they fit an adult seat belt properly.",
+    ref:"Your License to Drive — Child Restraints" },
+
+  /* ----- ALCOHOL & PENALTIES ----- */
+  { c:"alcohol",
+    q:"For a driver age 21 or older, it is illegal to drive in Alabama with a blood alcohol concentration (BAC) of:",
+    choices:["0.02% or higher","0.05% or higher","0.08% or higher","0.15% or higher"],
+    a:2, e:"For drivers 21 and older, the legal limit is 0.08% BAC. You can still be charged below that if impaired.",
+    ref:"Alcohol, Drugs & Driving — DUI Limits" },
+
+  { c:"alcohol",
+    q:"For a driver UNDER 21, Alabama's 'Zero Tolerance' law sets the illegal BAC at:",
+    choices:["0.02% or higher","0.08% or higher","0.10% or higher","There is no limit"],
+    a:0, e:"Under Zero Tolerance, drivers under 21 are illegal at just 0.02% BAC — essentially any measurable alcohol can mean a DUI.",
+    ref:"Alcohol, Drugs & Driving — Zero Tolerance (Under 21)" },
+
+  { c:"alcohol",
+    q:"What is the only thing that can sober up a person who has been drinking?",
+    choices:["Coffee","A cold shower","Time","Exercise"],
+    a:2, e:"Only time lets your body remove alcohol. Coffee, food, or a shower may make you feel more awake but do NOT lower your BAC.",
+    ref:"Alcohol, Drugs & Driving — Effects of Alcohol" },
+
+  { c:"alcohol",
+    q:"Alcohol affects your driving by:",
+    choices:["Improving your reflexes","Slowing reaction time and impairing judgment and vision","Making you a safer driver","Having no effect in small amounts"],
+    a:1, e:"Alcohol is a depressant that slows reaction time and impairs judgment, coordination, and vision — even in small amounts.",
+    ref:"Alcohol, Drugs & Driving — Effects of Alcohol" },
+
+  { c:"alcohol",
+    q:"Refusing to take a chemical test when lawfully arrested for DUI in Alabama results in:",
+    choices:["No penalty","An automatic suspension of your driver license","A warning only","A reduced fine"],
+    a:1, e:"Because of Implied Consent, refusing a breath or blood test brings an automatic license suspension, separate from any DUI conviction.",
+    ref:"Alcohol, Drugs & Driving — Implied Consent" },
+
+  { c:"alcohol",
+    q:"Prescription or over-the-counter medications can:",
+    choices:["Never affect driving","Impair driving and cause drowsiness, just like alcohol","Only matter for drivers over 65","Improve nighttime vision"],
+    a:1, e:"Many legal medications cause drowsiness or impairment. Check labels and ask a pharmacist before driving.",
+    ref:"Alcohol, Drugs & Driving — Medications" }
+];
+
+/* ---------- Category metadata ---------- */
+const CATS = {
+  signs:   { name:"Signs & Markings", color:"#13315c" },
+  rules:   { name:"Rules of the Road", color:"#9e1b32" },
+  safe:    { name:"Safe Driving",      color:"#1f9d55" },
+  license: { name:"Licensing & Laws",  color:"#7048e8" },
+  alcohol: { name:"Alcohol & Penalties", color:"#e8590c" }
+};
+
+/* ---------- Game State ---------- */
+const PASS_PCT = 0.8;
+const MANUAL_URL = "https://www.alea.gov/sites/default/files/ALEA%20DL%20Manual.pdf";
+/* Printed page in the ALEA manual for each topic (keyed by the part after the em dash).
+   The PDF's physical page = printed page + 2 (cover + front-matter offset), used for #page= deep links. */
+const MANUAL_PAGE_OFFSET = 2;
+const MANUAL_PAGES = {
+  "Sign Shapes & Colors":41, "Regulatory Signs":42, "Warning Signs":44, "Work Zone Signs":44,
+  "Pavement Markings":52, "Traffic Signals":54, "Hand Signals":21,
+  "Right-of-Way":62, "Turning":21, "Turning & Right-of-Way":62, "Turns at Signals":54,
+  "Yielding & Merging":62, "Intersections & Roundabouts":57, "Changing Lanes & Passing":64,
+  "Passing":64, "Merging & Lane Changes":66, "School Buses":62, "Railroad Crossings":38,
+  "Speed Limits":59, "Speed Limits / School Zones":59, "Emergency Vehicles":65, "Move Over Law":68,
+  "Parking":28, "Pedestrians & Crosswalks":65, "Pedestrian Right-of-Way":65, "Sharing the Road":23,
+  "Following Distance":36, "Following Distance & Aggressive Drivers":36, "Adverse Conditions":71,
+  "Skids & Hydroplaning":72, "Night Driving":69, "Night Driving & Headlights":69,
+  "Emergencies / Night Driving":69, "Reduced Visibility":73, "Defensive Driving":20,
+  "Scanning & Hazards":20, "Emergencies":73, "Driver Condition":32, "Curves & Speed Control":44,
+  "Graduated Driver License (GDL)":9, "Occupant Protection":30, "Child Restraints":30,
+  "Maintaining Your License":14, "Distracted Driving Laws":32, "Point System & Suspension":18,
+  "Implied Consent":32, "DUI Limits":32, "Zero Tolerance (Under 21)":32, "Effects of Alcohol":32,
+  "Medications":35
+};
+function manualRefPage(ref){
+  const sub = ref.split("—").pop().trim();
+  return MANUAL_PAGES[sub] || null;
+}
+function manualHref(ref){
+  const p = manualRefPage(ref);
+  return p ? (MANUAL_URL + "#page=" + (p + MANUAL_PAGE_OFFSET)) : MANUAL_URL;
+}
+function manualLinkText(ref){
+  const p = manualRefPage(ref);
+  return p ? `Open the Driver Manual to p.${p} (PDF) ↗` : "Open the Driver Manual (PDF) ↗";
+}
+let state = null;
+let muted = false;
+
+/* ---------- Utilities ---------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+/* Balanced random sample across categories, then top up randomly */
+function pickQuestions(n){
+  const byCat = {};
+  for(const q of BANK){ (byCat[q.c] = byCat[q.c]||[]).push(q); }
+  const cats = Object.keys(byCat);
+  const perCat = Math.floor(n / cats.length);
+  let chosen = [];
+  for(const c of cats){ chosen = chosen.concat(shuffle(byCat[c]).slice(0, perCat)); }
+  // top up to n from the remainder
+  const remaining = shuffle(BANK.filter(q => !chosen.includes(q)));
+  let i = 0;
+  while(chosen.length < n && i < remaining.length){ chosen.push(remaining[i++]); }
+  return shuffle(chosen).slice(0, n);
+}
+/* Build a question with shuffled choices, tracking correct index */
+function prepQuestion(q){
+  const order = shuffle(q.choices.map((text,idx)=>({text, correct: idx===q.a})));
+  return {
+    raw:q,
+    text:q.q,
+    sign:q.sign || null,
+    cat:q.c,
+    choices:order,
+    correctIdx:order.findIndex(o=>o.correct),
+    explain:q.e,
+    ref:q.ref
+  };
+}
+
+/* ---------- Sound (Web Audio API) ---------- */
+let audioCtx = null;
+function tone(freq, dur, type, when, vol){
+  if(muted) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type||"sine";
+    o.frequency.value = freq;
+    const t = audioCtx.currentTime + (when||0);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol||0.18, t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+(dur||0.15));
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t+(dur||0.15)+0.02);
+  }catch(e){}
+}
+const sfx = {
+  correct(){ tone(660,0.12,"sine",0); tone(880,0.16,"sine",0.1); },
+  wrong(){ tone(200,0.18,"sawtooth",0,0.14); tone(150,0.22,"sawtooth",0.12,0.14); },
+  heart(){ tone(120,0.3,"triangle",0,0.16); },
+  win(){ [523,659,784,1046].forEach((f,i)=>tone(f,0.18,"sine",i*0.12,0.16)); },
+  lose(){ [392,330,262].forEach((f,i)=>tone(f,0.25,"triangle",i*0.16,0.15)); },
+  click(){ tone(440,0.05,"sine",0,0.08); }
+};
+
+/* ---------- Rendering ---------- */
+const app = document.getElementById("app");
+
+function renderStart(){
+  stopDrive();
+  state = null;
+  app.innerHTML = `
+    <div class="card">
+      <div class="brand"><span class="car">🚗</span><h1>Alabama Permit Practice</h1></div>
+      <p class="sub">A fun way to get ready for the real Learner's Permit knowledge test</p>
+
+      <div class="how">
+        The real exam has <b>30 questions</b> and you need <b>24 correct (80%)</b> to pass.
+        Pick a mode below. You have <b>❤️❤️❤️ 3 hearts</b> — lose one for each wrong answer.
+        After every answer you'll see <b>why</b> and exactly <b>where to study</b> in the Alabama Driver Manual.
+      </div>
+
+      <div class="modes">
+        <button class="mode" id="modeExam">
+          <span class="emoji">📋</span>
+          <span>
+            <h3>Official Exam</h3>
+            <p>30 questions · pass at 24/30 · just like the real DMV test</p>
+          </span>
+        </button>
+        <button class="mode" id="modeQuick">
+          <span class="emoji">⚡</span>
+          <span>
+            <h3>Quick Practice</h3>
+            <p>10 questions · arcade survival — lose all 3 hearts and it's game over!</p>
+          </span>
+        </button>
+        <button class="mode" id="modeDrive">
+          <span class="emoji">🛣️</span>
+          <span>
+            <h3>Road Trip <span style="font-size:.6rem;vertical-align:middle;background:var(--gold);color:#5a3e00;padding:2px 6px;border-radius:999px;font-weight:900">NEW</span></h3>
+            <p>Get behind the wheel! Drive down the road and react to real situations as they come at you.</p>
+          </span>
+        </button>
+      </div>
+
+      <div class="toggle-row">
+        <span class="t-txt">Hardcore mode
+          <small>Running out of hearts ends the exam early. For brave studiers.</small>
+        </span>
+        <label class="switch"><input type="checkbox" id="hardcore"><span class="slider"></span></label>
+      </div>
+
+      <a class="btn ghost manual-btn" href="${MANUAL_URL}" target="_blank" rel="noopener noreferrer">📖 Read the Driver Manual (PDF)</a>
+
+      <div class="foot" style="color:#9fb0cd;margin-top:14px">
+        Tip: tap an answer or press <b>1–4</b> / <b>A–D</b> on a keyboard.
+      </div>
+    </div>`;
+
+  document.getElementById("modeExam").onclick = ()=>{ sfx.click(); startGame("exam"); };
+  document.getElementById("modeQuick").onclick = ()=>{ sfx.click(); startGame("quick"); };
+  document.getElementById("modeDrive").onclick = ()=>{ sfx.click(); startDrive(); };
+}
+
+function startGame(mode){
+  stopDrive();
+  const count = mode==="exam" ? 30 : 10;
+  const hardcore = document.getElementById("hardcore")?.checked || false;
+  const qs = pickQuestions(count).map(prepQuestion);
+  state = {
+    mode, hardcore,
+    qs, idx:0, hearts:3, score:0, streak:0, bestStreak:0,
+    answered:false, gameOver:false,
+    perCat:{}, // {cat:{correct,total}}
+  };
+  for(const q of qs){
+    const c = q.cat;
+    state.perCat[c] = state.perCat[c] || {correct:0,total:0};
+    state.perCat[c].total++;
+  }
+  renderQuestion();
+}
+
+function heartsHTML(){
+  let h = "";
+  for(let i=0;i<3;i++){
+    h += `<span class="heart ${i>=state.hearts?'lost':''}">❤️</span>`;
+  }
+  return h;
+}
+
+function renderQuestion(){
+  const q = state.qs[state.idx];
+  const cat = CATS[q.cat];
+  const total = state.qs.length;
+  const pct = Math.round((state.idx)/total*100);
+  const modeLabel = state.mode==="exam" ? "Official Exam" : "Quick Practice";
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="statusbar">
+        <div class="hearts" id="hearts">${heartsHTML()}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="pill"><span class="lbl">Score</span> ${state.score}</span>
+          <span class="pill streak"><span class="lbl">Streak</span> 🔥${state.streak}</span>
+        </div>
+      </div>
+
+      <div class="progress"><span style="width:${pct}%"></span></div>
+
+      <div class="qmeta">
+        <span class="cat" style="background:${cat.color}">${cat.name}</span>
+        <span class="qnum">${modeLabel} · Question ${state.idx+1} of ${total}</span>
+      </div>
+
+      <div class="question">${q.text}</div>
+      ${q.sign ? `<div class="signbox">${SIGNS[q.sign]}</div>` : ``}
+
+      <div class="choices" id="choices">
+        ${q.choices.map((ch,i)=>`
+          <button class="choice" data-i="${i}">
+            <span class="key">${"ABCD"[i]}</span>
+            <span class="ctext">${ch.text}</span>
+          </button>`).join("")}
+      </div>
+
+      <div id="feedSlot"></div>
+    </div>`;
+
+  state.answered = false;
+  document.querySelectorAll(".choice").forEach(btn=>{
+    btn.onclick = ()=> answer(parseInt(btn.dataset.i,10));
+  });
+}
+
+function answer(i){
+  if(state.answered) return;
+  state.answered = true;
+  const q = state.qs[state.idx];
+  const correct = i === q.correctIdx;
+  const btns = [...document.querySelectorAll(".choice")];
+
+  btns.forEach((b,bi)=>{
+    b.disabled = true;
+    if(bi===q.correctIdx) b.classList.add("correct");
+    else if(bi===i) b.classList.add("wrong");
+    else b.classList.add("muted-c");
+  });
+
+  if(correct){
+    state.score++;
+    state.streak++;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    state.perCat[q.cat].correct++;
+    sfx.correct();
+  }else{
+    state.streak = 0;
+    state.hearts = Math.max(0, state.hearts-1);
+    sfx.wrong();
+    setTimeout(()=>sfx.heart(), 180);
+    // animate hearts
+    const hwrap = document.getElementById("hearts");
+    if(hwrap) hwrap.innerHTML = heartsHTML();
+  }
+
+  const verdict = correct
+    ? `✅ Correct!${state.streak>=3?` 🔥 ${state.streak} in a row!`:""}`
+    : `❌ Not quite`;
+  const streakMsg = (correct && state.streak===5) ? " You're on fire!" :
+                    (correct && state.streak===10) ? " Unstoppable!" : "";
+
+  const feed = document.createElement("div");
+  feed.className = "feedback " + (correct?"ok":"no");
+  feed.innerHTML = `
+    <div class="verdict">${verdict}${streakMsg}</div>
+    <div class="explain">${correct ? "" : `<b>Correct answer:</b> ${q.choices[q.correctIdx].text}. `}${q.explain}</div>
+    <div class="ref">📖 <b>Where to study:</b> ${q.ref}<br>
+      <a class="manual-link" href="${manualHref(q.ref)}" target="_blank" rel="noopener noreferrer">${manualLinkText(q.ref)}</a></div>
+    <div class="next-row">
+      <button class="btn primary" id="nextBtn">${state.idx+1>=state.qs.length ? "See My Results →" : "Next Question →"}</button>
+    </div>`;
+  document.getElementById("feedSlot").appendChild(feed);
+
+  const nextBtn = document.getElementById("nextBtn");
+  nextBtn.onclick = ()=>{ sfx.click(); advance(); };
+  nextBtn.focus();
+
+  // Check for early game-over (quick mode always, exam only in hardcore)
+  const lethal = state.mode==="quick" || state.hardcore;
+  if(lethal && state.hearts<=0){
+    state.gameOver = true;
+    nextBtn.textContent = "Game Over → See Results";
+  }
+}
+
+function advance(){
+  if(state.gameOver || state.idx+1 >= state.qs.length){
+    renderResults();
+    return;
+  }
+  state.idx++;
+  renderQuestion();
+}
+
+function renderResults(){
+  stopDrive();
+  const answeredCount = state.gameOver ? (state.idx+1) : state.qs.length;
+  const total = state.qs.length;
+  const passNeeded = Math.ceil(total*PASS_PCT);
+  const pct = Math.round(state.score/total*100);
+  const passed = !state.gameOver && state.score >= passNeeded;
+  const gameOver = state.gameOver;
+
+  const isDrive = state.mode==="drive";
+  let emoji, verdict, vclass, msg;
+  if(gameOver){
+    emoji = isDrive ? "🚓" : "💔";
+    verdict = isDrive ? "PULLED OVER" : "GAME OVER";
+    vclass="fail";
+    msg = isDrive
+      ? `One too many wrong moves ended your trip after ${answeredCount} stop${answeredCount>1?'s':''}. Review the 📖 sections above and hit the road again!`
+      : `You ran out of hearts after ${answeredCount} question${answeredCount>1?'s':''}. Review the manual sections above and run it back!`;
+  }else if(passed){
+    emoji = isDrive ? (pct===100 ? "🏁" : "🚗") : (pct===100 ? "🏆" : "🎉");
+    verdict = isDrive ? "ARRIVED SAFELY!" : "YOU PASSED!";
+    vclass="pass";
+    if(isDrive){
+      msg = pct===100 ? "A flawless drive — not a single mistake. You're road-ready!" :
+            "You reached your destination and handled the road like a pro. Keep it up!";
+    }else{
+      msg = pct===100 ? "A perfect score! You're more than ready for the real thing." :
+            "Great work — that's a passing score on the real Alabama exam. Keep practicing to stay sharp!";
+    }
+  }else{
+    emoji = isDrive ? "🚗" : "📚";
+    verdict = isDrive ? "YOU MADE IT" : "NOT YET";
+    vclass="fail";
+    msg = isDrive
+      ? `You arrived, but a few risky moves along the way. Review the 📖 sections above and drive safer next trip!`
+      : `You needed ${passNeeded}/${total} to pass. So close — review the 📖 sections flagged on your missed questions and try again. You've got this!`;
+  }
+
+  // breakdown rows
+  const rows = Object.keys(state.perCat).map(c=>{
+    const d = state.perCat[c];
+    const p = d.total ? Math.round(d.correct/d.total*100) : 0;
+    return `<div class="brow">
+      <span class="bname">${CATS[c].name}</span>
+      <span class="bbar"><span style="width:${p}%;background:${CATS[c].color}"></span></span>
+      <span class="bscore">${d.correct}/${d.total}</span>
+    </div>`;
+  }).join("");
+
+  const passMarkPct = PASS_PCT*100;
+  const barColor = passed ? "var(--green)" : "var(--crimson)";
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="result-emoji">${emoji}</div>
+      <div class="verdict-big ${vclass}">${verdict}</div>
+      <div class="scoreline">${isDrive?"Road Trip":(state.mode==="exam"?"Official Exam":"Quick Practice")}${gameOver?` · ${answeredCount} of ${total} ${isDrive?"stops":"answered"}`:""}</div>
+      <div class="scorebig">${state.score}<small>/${total} correct (${pct}%)</small></div>
+
+      <div class="passbar">
+        <span style="width:${pct}%;background:${barColor}"></span>
+        <span class="mark" style="left:${passMarkPct}%"></span>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);font-weight:700;margin-top:14px">
+        <span>🔥 Best streak: ${state.bestStreak}</span>
+        <span>❤️ Hearts left: ${Math.max(0,state.hearts)}</span>
+      </div>
+
+      <div class="breakdown">
+        <h4>How you did by topic</h4>
+        ${rows}
+      </div>
+
+      <div class="msg">${msg}</div>
+
+      <div class="btn-grid">
+        <button class="btn gold full" id="shareBtn">📤 Share my score / the game</button>
+        <button class="btn primary" id="againBtn">↻ Play Again</button>
+        <button class="btn ghost" id="menuBtn">⌂ Change Mode</button>
+      </div>
+    </div>`;
+
+  document.getElementById("againBtn").onclick = ()=>{ sfx.click(); isDrive ? startDrive() : startGame(state.mode); };
+  document.getElementById("menuBtn").onclick = ()=>{ sfx.click(); renderStart(); };
+  document.getElementById("shareBtn").onclick = ()=> shareScore(state.score, total, pct, passed, gameOver);
+
+  if(passed){ sfx.win(); launchConfetti(); }
+  else if(gameOver){ sfx.lose(); }
+}
+
+/* ---------- Share ---------- */
+function shareScore(score,total,pct,passed,gameOver){
+  sfx.click();
+  const status = gameOver ? "ran out of hearts" : (passed ? "PASSED ✅" : "is studying up");
+  const text = `🚗 I scored ${score}/${total} (${pct}%) on the Alabama Learner's Permit Practice Game and ${status}! Think you can pass? Give it a try!`;
+  if(navigator.share){
+    navigator.share({title:"Alabama Permit Practice", text}).catch(()=>copyText(text));
+  }else{
+    copyText(text);
+  }
+}
+function copyText(text){
+  const note = "  (To share the game itself, send this HTML file to a friend!)";
+  const full = text + "\n" + note;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(full).then(
+      ()=>showToast("Copied! Paste it anywhere 📋"),
+      ()=>fallbackCopy(full)
+    );
+  }else{ fallbackCopy(full); }
+}
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); showToast("Copied! Paste it anywhere 📋"); }
+  catch(e){ showToast("Copy not supported — select the text"); }
+  document.body.removeChild(ta);
+}
+let toastTimer=null;
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+/* ---------- Confetti ---------- */
+function launchConfetti(){
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width = window.innerWidth;
+  const H = canvas.height = window.innerHeight;
+  const colors = ["#9e1b32","#ffd166","#1f9d55","#13315c","#7048e8","#e8590c"];
+  const pieces = [];
+  for(let i=0;i<140;i++){
+    pieces.push({
+      x:Math.random()*W, y:-20-Math.random()*H*0.5,
+      r:6+Math.random()*8, c:colors[i%colors.length],
+      vy:2+Math.random()*4, vx:-2+Math.random()*4,
+      rot:Math.random()*Math.PI, vr:-0.2+Math.random()*0.4
+    });
+  }
+  let frames = 0;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vy+=0.04;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.6);
+      ctx.restore();
+    });
+    frames++;
+    if(frames<220) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,W,H);
+  }
+  draw();
+}
+
+/* ---------- Keyboard ---------- */
+document.addEventListener("keydown",(e)=>{
+  if(!state || state.gameOver && false) {}
+  // answering
+  if(state && !state.answered && document.querySelector(".choice")){
+    let idx = -1;
+    if(/^[1-4]$/.test(e.key)) idx = parseInt(e.key,10)-1;
+    const up = e.key.toUpperCase();
+    if(/^[A-D]$/.test(up)) idx = "ABCD".indexOf(up);
+    if(idx>=0){ const b=document.querySelector(`.choice[data-i="${idx}"]`); if(b) b.click(); }
+  }
+  // next / enter
+  if(e.key==="Enter"){
+    const nb = document.getElementById("nextBtn");
+    if(nb){ e.preventDefault(); nb.click(); }
+  }
+});
+
+/* ---------- Mute toggle ---------- */
+document.getElementById("muteBtn").onclick = function(){
+  muted = !muted;
+  this.textContent = muted ? "🔇" : "🔊";
+  if(!muted) sfx.click();
+};
+
+/* ============================================================
+   ROAD TRIP (driving simulation) MODE
+   ============================================================ */
+const DRIVE_SCENARIOS = [
+  { visual:"sign", icon:"🛑", tag:"Stop Sign", c:"rules",
+    prompt:"You roll up to a 4-way stop. A pickup on your right stopped a moment before you. What do you do?",
+    choices:["Go first — you're in a hurry","Let the truck on your right go, then proceed","Wave everyone through at once","Creep through without stopping"], a:1,
+    e:"Come to a complete stop. Whoever stops first goes first; if it's a tie, yield to the vehicle on your right.",
+    ref:"Rules of the Road — Right-of-Way" },
+
+  { visual:"light", color:"red", flash:true, tag:"Flashing Red", c:"signs",
+    prompt:"The signal ahead is flashing RED. How should you treat it?",
+    choices:["Like a green light — keep going","Like a stop sign — stop, then go when clear","Ignore it; it's malfunctioning","Speed up to clear it"], a:1,
+    e:"A flashing red light means the same as a STOP sign: stop completely, then proceed when it's safe.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { visual:"light", color:"yellow", tag:"Yellow Light", c:"signs",
+    prompt:"Nearing the intersection, the light turns solid YELLOW and you're far enough back to stop safely. You should:",
+    choices:["Floor it to beat the red","Stop — the light is about to turn red","Honk and continue","Swerve into the next lane"], a:1,
+    e:"A steady yellow warns the light is about to turn red. If you can stop safely, do so.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { visual:"sign", icon:"🚸", tag:"School Zone", c:"rules",
+    prompt:"You enter a posted SCHOOL ZONE at arrival time and children are nearby. You should:",
+    choices:["Keep your highway speed","Slow to the posted school-zone limit and watch for children","Use your horn to clear the way","Pass any car going too slow"], a:1,
+    e:"Slow to the reduced school-zone speed limit and be ready to stop for children and crossing guards.",
+    ref:"Rules of the Road — Speed Limits / School Zones" },
+
+  { visual:"crosswalk", icon:"🚶", tag:"Crosswalk", c:"rules",
+    prompt:"A pedestrian steps into the marked crosswalk ahead of you. What's the right move?",
+    choices:["Continue — you have the right-of-way","Stop and yield to the pedestrian","Swerve around behind them quickly","Edge forward to hurry them"], a:1,
+    e:"Drivers must yield to pedestrians in a crosswalk. Stop and let them cross safely.",
+    ref:"Rules of the Road — Pedestrians & Crosswalks" },
+
+  { visual:"railroad", icon:"🚂", tag:"Railroad", c:"rules",
+    prompt:"Red lights flash and the gate lowers at the railroad crossing ahead. You must:",
+    choices:["Drive around the gate if no train is in sight","Stop and wait until the gate rises and lights stop","Speed across before the train","Stop on the tracks to look both ways"], a:1,
+    e:"Never go around a lowered gate. Stop at least 15 feet back and wait until the gate lifts and the lights stop.",
+    ref:"Rules of the Road — Railroad Crossings" },
+
+  { visual:"sign", icon:"🔻", tag:"Yield / Merge", c:"rules",
+    prompt:"Merging onto a highway, you reach a YIELD sign and traffic is coming in the lane you need. You should:",
+    choices:["Force your way in; they'll brake","Slow or stop and merge when there's a safe gap","Stop and wait for an empty highway","Speed up and cut across all lanes"], a:1,
+    e:"Yield means give the right-of-way. Adjust speed and merge into a safe gap without forcing others to brake.",
+    ref:"Rules of the Road — Yielding & Merging" },
+
+  { visual:"mirror", mirror:"emergency", tag:"Emergency Vehicle", c:"rules",
+    prompt:"In your mirror, an ambulance with lights and siren comes up behind you. What should you do?",
+    choices:["Speed up to stay ahead","Pull over to the right and stop until it passes","Stop immediately in your lane","Brake hard in the middle of the road"], a:1,
+    e:"Pull to the right edge of the road, clear of intersections, and stop until the emergency vehicle passes.",
+    ref:"Rules of the Road — Emergency Vehicles" },
+
+  { visual:"workzone", icon:"🚧", tag:"Work Zone", c:"signs",
+    prompt:"Orange cones and signs mark a WORK ZONE ahead with workers present. You should:",
+    choices:["Keep your speed; cones are just suggestions","Slow down, obey the posted limit, and watch for workers","Change lanes without signaling","Tailgate to get through faster"], a:1,
+    e:"In work zones, reduce speed, follow posted limits and flaggers, and watch for workers. Fines are often doubled.",
+    ref:"Signals, Signs & Markings — Work Zone Signs" },
+
+  { visual:"hazard", icon:"🦌", ambiance:"night", tag:"Night Driving", c:"safe",
+    prompt:"Driving at night, a deer freezes in your lane ahead. The safest reaction is to:",
+    choices:["Swerve hard into the oncoming lane","Brake firmly and stay in your lane — don't swerve into traffic","Speed up to scare it off","Turn off your headlights"], a:1,
+    e:"Brake firmly and stay in your lane. Swerving can cause a worse crash with oncoming traffic or a rollover.",
+    ref:"Safe Driving — Emergencies / Night Driving" },
+
+  { visual:"light", color:"green", tag:"Green Light Turn", c:"rules",
+    prompt:"You have a GREEN light and want to turn left. Oncoming traffic is approaching. You should:",
+    choices:["Turn immediately — green means go","Yield to oncoming traffic, then turn when clear","Stop and wait for a red light","Speed up to beat the oncoming cars"], a:1,
+    e:"A green light lets you turn left only after yielding to oncoming traffic and pedestrians. Turn at a safe gap.",
+    ref:"Rules of the Road — Turning & Right-of-Way" },
+
+  { visual:"leadcar", ambiance:"rain", tag:"Following Distance", c:"safe",
+    prompt:"It's raining and the car ahead is close. To keep a safe following distance you should:",
+    choices:["Use a 1-second gap","Increase to a 4-second-or-more gap","Tailgate so others can't cut in","Match their bumper exactly"], a:1,
+    e:"Use the 3-second rule in good conditions and increase to 4+ seconds in rain — stopping distance grows on wet roads.",
+    ref:"Safe Driving — Following Distance" },
+
+  { visual:"sign", icon:"🔄", tag:"Roundabout", c:"rules",
+    prompt:"You reach a roundabout with cars already circling. You should:",
+    choices:["Stop inside the circle and wait","Enter going counter-clockwise, yielding to traffic already in it","Go clockwise to exit faster","Come to a full stop before every entry"], a:1,
+    e:"In a roundabout, traffic flows counter-clockwise. Yield to vehicles already in the circle, then enter at a safe gap.",
+    ref:"Rules of the Road — Intersections & Roundabouts" },
+
+  { visual:"bus", icon:"🚌", tag:"School Bus", c:"rules",
+    prompt:"On a two-lane road, the school bus ahead stops, extends its STOP arm, and flashes red lights. You must:",
+    choices:["Pass carefully on the left","Stop and wait until the lights stop and the arm folds in","Slow down but keep rolling","Honk so the children hurry"], a:1,
+    e:"On an undivided road, traffic both ways must stop for a bus with flashing red lights and an extended stop arm.",
+    ref:"Rules of the Road — School Buses" },
+
+  { visual:"sign", icon:"⛔", tag:"Do Not Enter", c:"signs",
+    prompt:"As you go to turn, a red-and-white DO NOT ENTER sign faces you. It means:",
+    choices:["Enter slowly with caution","Do not enter — it's a one-way road coming toward you","Enter only if no cars are coming","Honk and enter anyway"], a:1,
+    e:"A Do Not Enter sign marks a one-way road or ramp coming at you. Never enter — you'd be driving the wrong way into oncoming traffic.",
+    ref:"Signals, Signs & Markings — Regulatory Signs" },
+
+  { visual:"speedsign", limit:45, tag:"Speed Limit", c:"rules",
+    prompt:"A posted SPEED LIMIT 45 sign appears ahead. That number is:",
+    choices:["A suggestion you can ignore in light traffic","The maximum legal speed for ideal conditions","The minimum you must drive","Only meant for trucks"], a:1,
+    e:"A speed limit sign is the maximum legal speed under ideal conditions. Slow down further when weather, traffic, or the road require it.",
+    ref:"Rules of the Road — Speed Limits" },
+
+  { visual:"warn", icon:"↩️", tag:"Curve Ahead", c:"safe",
+    prompt:"A yellow sign warns of a sharp CURVE ahead. You should:",
+    choices:["Speed up through the curve","Slow down before you enter the curve","Brake hard in the middle of the curve","Drift into the other lane"], a:1,
+    e:"Reduce speed before entering a curve, not during it. Braking hard mid-curve can break traction and cause a skid.",
+    ref:"Safe Driving — Curves & Speed Control" },
+
+  { visual:"warn", icon:"💧", tag:"Slippery When Wet", c:"safe",
+    prompt:"You pass a 'Slippery When Wet' warning just as rain begins. The safest response is to:",
+    choices:["Keep your normal speed","Slow down and increase your following distance","Brake hard to test traction","Switch on your high beams"], a:1,
+    e:"Wet roads cut traction. Slow down, avoid sudden steering or braking, and leave extra following distance.",
+    ref:"Safe Driving — Adverse Conditions" },
+
+  { visual:"roadside", tag:"Move Over Law", c:"rules",
+    prompt:"A police car is stopped on the right shoulder ahead with lights flashing. Alabama's Move Over law says you should:",
+    choices:["Keep your speed in the right lane","Move over a lane if you safely can, or slow down","Speed up to get past quickly","Stop in your lane"], a:1,
+    e:"Move one lane away from a stopped emergency or utility vehicle when it's safe. If you can't change lanes, slow well below the limit.",
+    ref:"Rules of the Road — Move Over Law" },
+
+  { visual:"hazard", icon:"🚲", tag:"Share the Road", c:"rules",
+    prompt:"A bicyclist is riding in your lane ahead. To get past, you should:",
+    choices:["Honk and squeeze by closely","Slow down and pass leaving plenty of room when it's clear","Tailgate until they move over","Force them onto the shoulder"], a:1,
+    e:"Bicycles may use the road. Slow down and give them ample space (at least a few feet) when passing — only when the way is clear.",
+    ref:"Rules of the Road — Sharing the Road" },
+
+  { visual:"warn", icon:"🌫️", ambiance:"fog", tag:"Fog", c:"safe",
+    prompt:"You drive into heavy FOG. For the best visibility you should use your:",
+    choices:["High beams","Low beams","No lights at all","Hazard lights while driving normally"], a:1,
+    e:"Use low beams in fog. High beams reflect off the fog and worsen your visibility. Slow down and add following distance.",
+    ref:"Safe Driving — Reduced Visibility" },
+
+  { visual:"mirror", mirror:"tailgater", tag:"Tailgater", c:"safe",
+    prompt:"In your mirror, a car is following far too closely (tailgating). The safest move is to:",
+    choices:["Brake-check them to back them off","Stay steady and let them pass when you safely can","Speed up well over the limit","Swerve to scare them"], a:1,
+    e:"Never brake-check a tailgater. Keep a steady speed, leave more room ahead of you, and let them pass when it's safe.",
+    ref:"Safe Driving — Following Distance & Aggressive Drivers" },
+
+  { visual:"light", color:"red", tag:"Right on Red", c:"rules",
+    prompt:"You're stopped at a RED light and want to turn RIGHT. Unless a sign forbids it, you may:",
+    choices:["Turn without stopping","Stop completely, then turn right when the way is clear","Never turn on red","Turn left instead"], a:1,
+    e:"Right turn on red is allowed in Alabama unless a sign prohibits it — but only after a full stop and yielding to pedestrians and cross traffic.",
+    ref:"Rules of the Road — Turns at Signals" },
+
+  { visual:"warn", icon:"🔀", tag:"Lane Ends", c:"rules",
+    prompt:"A sign warns your lane ends and traffic must merge ahead. You should:",
+    choices:["Race to the front and force your way in","Signal early and merge into the open lane at a safe gap","Stop and wait for all traffic to clear","Straddle both lanes"], a:1,
+    e:"When a lane ends, signal early and merge smoothly into the continuing lane at a safe gap, matching the speed of traffic.",
+    ref:"Rules of the Road — Merging & Lane Changes" },
+
+  { visual:"sign", icon:"➡️", tag:"One Way", c:"signs",
+    prompt:"A ONE WAY sign points to the right. You may:",
+    choices:["Travel either direction","Travel only in the direction the arrow points","Make a U-turn anytime","Stop and park in the lane"], a:1,
+    e:"A One Way sign means traffic moves only in the direction of the arrow. Never drive against it.",
+    ref:"Signals, Signs & Markings — Regulatory Signs" },
+
+  { visual:"sign", icon:"🚫", tag:"No U-Turn", c:"signs",
+    prompt:"You'd like to reverse direction, but the intersection shows a NO U-TURN sign. You should:",
+    choices:["Make the U-turn quickly anyway","Not make a U-turn here; find a legal spot","U-turn only if no cars are near","Back up instead"], a:1,
+    e:"A No U-Turn sign prohibits turning around at that location. Continue and turn around where it's legal.",
+    ref:"Signals, Signs & Markings — Regulatory Signs" },
+
+  { visual:"light", color:"red", tag:"Red Light", c:"signs",
+    prompt:"The traffic light ahead is a steady RED. You must:",
+    choices:["Slow down but keep rolling","Come to a complete stop and wait for green","Stop only if a car is coming","Treat it as a yield"], a:1,
+    e:"A steady red light means come to a complete stop behind the stop line and stay stopped until the light turns green.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { visual:"light", color:"yellow", flash:true, tag:"Flashing Yellow Arrow", c:"rules",
+    prompt:"Your left-turn signal shows a FLASHING YELLOW ARROW. It means you may:",
+    choices:["Turn left — you have the right-of-way","Turn left after yielding to oncoming traffic and pedestrians","Never turn left here","Stop and wait for a green arrow"], a:1,
+    e:"A flashing yellow arrow means left turns are allowed, but you must yield to oncoming traffic and pedestrians first.",
+    ref:"Signals, Signs & Markings — Traffic Signals" },
+
+  { visual:"light", color:"green", tag:"Green, Pedestrian Crossing", c:"rules",
+    prompt:"Your light turns GREEN, but a pedestrian is still in the crosswalk ahead. You should:",
+    choices:["Go — green means go","Wait and let the pedestrian finish crossing","Honk so they hurry","Drive around them"], a:1,
+    e:"Even with a green light, you must yield to pedestrians already in the crosswalk. Wait until they have safely crossed.",
+    ref:"Rules of the Road — Pedestrians & Crosswalks" },
+
+  { visual:"crosswalk", icon:"🦯", tag:"Blind Pedestrian", c:"rules",
+    prompt:"A pedestrian using a white cane (or guide dog) steps toward the crosswalk. You must:",
+    choices:["Proceed if you get there first","Always stop and yield — they have the right-of-way","Honk to warn them","Edge around them"], a:1,
+    e:"You must always yield to a pedestrian using a white cane or guide dog. Stop and let them cross safely.",
+    ref:"Rules of the Road — Pedestrian Right-of-Way" },
+
+  { visual:"hazard", icon:"⚽", tag:"Ball in the Road", c:"safe",
+    prompt:"A ball rolls into the street ahead of you. The smartest reaction is to:",
+    choices:["Keep going at the same speed","Slow down or stop — a child may run out after it","Swerve into oncoming traffic","Speed up to get past"], a:1,
+    e:"A ball in the road is a warning that a child may dart out after it. Slow down or stop and be ready.",
+    ref:"Safe Driving — Scanning & Hazards" },
+
+  { visual:"hazard", icon:"🚜", tag:"Slow-Moving Vehicle", c:"rules",
+    prompt:"You catch up to a tractor displaying an orange triangle (slow-moving vehicle). You should:",
+    choices:["Tailgate to push it along","Slow down and pass only when it's legal and clear","Honk continuously","Pass on a curve to save time"], a:1,
+    e:"An orange triangle marks a slow-moving vehicle. Reduce speed and pass only where legal and when the way is clear.",
+    ref:"Rules of the Road — Sharing the Road" },
+
+  { visual:"warn", icon:"🦌", tag:"Animal Crossing", c:"safe",
+    prompt:"A yellow sign shows a leaping deer. It warns that you should:",
+    choices:["Expect a petting zoo","Watch for animals crossing, especially at dawn and dusk","Speed up through the area","Use your high beams in traffic"], a:1,
+    e:"An animal-crossing sign means wildlife may be on the road. Slow down and stay alert, particularly at dawn and dusk.",
+    ref:"Signals, Signs & Markings — Warning Signs" },
+
+  { visual:"warn", icon:"💦", ambiance:"rain", tag:"Hydroplaning", c:"safe",
+    prompt:"At highway speed in heavy rain, your steering suddenly feels light as you hydroplane. You should:",
+    choices:["Brake hard immediately","Ease off the gas and hold the wheel steady until you regain traction","Accelerate to power through","Turn the wheel sharply"], a:1,
+    e:"If you hydroplane, ease off the accelerator, avoid hard braking or sharp steering, and hold the wheel steady until the tires grip again.",
+    ref:"Safe Driving — Skids & Hydroplaning" },
+
+  { visual:"warn", icon:"💥", tag:"Tire Blowout", c:"safe",
+    prompt:"A front tire suddenly blows out at speed. The safest response is to:",
+    choices:["Slam on the brakes","Grip the wheel firmly, ease off the gas, and slow gently before pulling over","Jerk the wheel toward the shoulder","Speed up to keep control"], a:1,
+    e:"In a blowout, hold the wheel firmly, take your foot off the gas, and slow gradually before easing off the road. Hard braking can cause a spin.",
+    ref:"Safe Driving — Emergencies" },
+
+  { visual:"warn", icon:"🔀", tag:"Entering the Highway", c:"rules",
+    prompt:"You're on an entrance ramp merging onto the interstate. You should:",
+    choices:["Stop at the end of the ramp and wait","Use the ramp to reach highway speed, then merge into a gap","Merge slowly and force traffic to brake","Cross all lanes at once"], a:1,
+    e:"Use the acceleration lane to match the speed of highway traffic, then signal and merge into a safe gap.",
+    ref:"Rules of the Road — Merging & Lane Changes" },
+
+  { visual:"sign", icon:"🦺", tag:"Flagger", c:"rules",
+    prompt:"In a work zone, a flagger holds a sign directing traffic. Their instructions:",
+    choices:["Can be ignored if the light is green","Must be obeyed — they override signs and signals","Only apply to trucks","Are just suggestions"], a:1,
+    e:"A flagger's directions legally override posted signs and signals. Follow them and watch for workers.",
+    ref:"Signals, Signs & Markings — Work Zone Signs" },
+
+  { visual:"leadcar", tag:"Funeral Procession", c:"rules",
+    prompt:"A funeral procession with lights on is moving through an intersection ahead. You should:",
+    choices:["Cut through a gap in the procession","Yield and let the procession continue together","Honk to pass","Force the lead car to stop"], a:1,
+    e:"Yield to a funeral procession. Do not cut through it, even if you have a green light, until it has passed.",
+    ref:"Rules of the Road — Right-of-Way" },
+
+  { visual:"warn", icon:"😴", ambiance:"night", tag:"Drowsy Driving", c:"safe",
+    prompt:"On a long night drive you start feeling very drowsy. The safest thing to do is:",
+    choices:["Turn up the radio and push on","Pull over somewhere safe and rest","Drive faster to finish sooner","Open the window and keep going for hours"], a:1,
+    e:"Fatigue impairs you much like alcohol. Pull over somewhere safe to rest — coffee, radio, and fresh air are not real fixes.",
+    ref:"Safe Driving — Driver Condition" },
+
+  { visual:"sign", icon:"📵", tag:"No Texting", c:"license",
+    prompt:"Your phone buzzes with a text while you're driving. In Alabama you should:",
+    choices:["Reply quickly at a red light's fine","Leave it — texting while driving is illegal; wait until parked","Text only with one hand","Text if traffic is light"], a:1,
+    e:"Texting while driving is illegal for all Alabama drivers. Wait until you are safely parked to read or send messages.",
+    ref:"Your License to Drive — Distracted Driving Laws" }
+];
+
+/* drive engine state */
+let driveRAF = null, driveActive = false, dcanvas = null, dctx = null;
+const CRUISE = 6.5;
+
+function pickScenarios(n){
+  return shuffle(DRIVE_SCENARIOS).slice(0, Math.min(n, DRIVE_SCENARIOS.length));
+}
+function prepScenario(s){
+  const order = shuffle(s.choices.map((text,idx)=>({text, correct: idx===s.a})));
+  return Object.assign({}, s, { choices:order, correctIdx:order.findIndex(o=>o.correct) });
+}
+
+function startDrive(){
+  stopDrive();
+  const scenarios = pickScenarios(12).map(prepScenario);
+  state = {
+    mode:"drive", hardcore:false, scenarios, qs:scenarios,
+    dIdx:0, idx:0, hearts:3, score:0, streak:0, bestStreak:0,
+    answered:false, gameOver:false, perCat:{}, phase:"driving",
+    scroll:0, approachT:0, speed:0, frame:0, shake:0, cur:null
+  };
+  for(const s of scenarios){
+    state.perCat[s.c] = state.perCat[s.c] || {correct:0,total:0};
+    state.perCat[s.c].total++;
+  }
+  state.cur = scenarios[0];
+  renderDrive();
+}
+
+function stopDrive(){
+  driveActive = false;
+  if(driveRAF){ cancelAnimationFrame(driveRAF); driveRAF = null; }
+  window.removeEventListener("resize", driveResize);
+}
+function driveResize(){ if(driveActive) driveFit(); }
+
+function renderDrive(){
+  app.innerHTML = `
+    <div class="card">
+      <div class="brand" style="margin-bottom:10px"><span class="car">🛣️</span><h1>Road Trip</h1></div>
+      <div class="statusbar">
+        <div class="hearts" id="dHearts">${heartsHTML()}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="pill"><span class="lbl">Score</span> <span id="dScore">0</span></span>
+          <span class="pill streak"><span class="lbl">Streak</span> <span id="dStreak">🔥0</span></span>
+        </div>
+      </div>
+      <div class="route">
+        <span style="font-size:1rem">🏠</span>
+        <div class="track" id="dTrack"><span id="dFill" style="width:0%"></span><span class="car-mark" id="dCar" style="left:0%">🚗</span></div>
+        <span class="flag">🏁</span>
+      </div>
+      <div class="stage" id="dStage">
+        <canvas id="road"></canvas>
+        <div class="speedo" id="dSpeedo"><span class="dot">▶</span> 0 mph</div>
+        <div class="scene-hint" id="dHint">Buckle up — here we go! 🚗💨</div>
+        <div class="drive-overlay" id="dOverlay"></div>
+      </div>
+      <div style="text-align:center;margin-top:12px">
+        <button class="btn ghost" id="dQuit" style="padding:9px 18px;font-size:.85rem">⌂ Quit Trip</button>
+      </div>
+      <div class="foot" style="color:#9fb0cd;margin-top:10px">Situations appear as you drive. Tap an answer or use 1–4 / A–D.</div>
+    </div>`;
+
+  dcanvas = document.getElementById("road");
+  dctx = dcanvas.getContext("2d");
+  document.getElementById("dQuit").onclick = ()=>{ sfx.click(); renderStart(); };
+  driveFit();
+  window.addEventListener("resize", driveResize);
+  driveActive = true; state.frame = 0;
+  driveLoop();
+}
+
+function driveFit(){
+  const stage = document.getElementById("dStage");
+  if(!stage || !dcanvas) return;
+  const w = stage.clientWidth;
+  const h = Math.round(Math.max(280, Math.min(460, w*0.82)));
+  state.dw = w; state.dh = h;
+  const dpr = window.devicePixelRatio || 1;
+  dcanvas.width = w*dpr; dcanvas.height = h*dpr;
+  dcanvas.style.height = h + "px";
+  dctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function driveLoop(){
+  if(!driveActive) return;
+  state.frame++;
+  const target = (state.phase==="driving") ? CRUISE : 0;
+  state.speed += (target - state.speed) * 0.12;
+  if(state.speed < 0.02) state.speed = 0;
+  state.scroll += state.speed;
+  if(state.phase==="driving"){
+    state.approachT += 0.011;
+    if(state.approachT >= 1){ state.approachT = 1; enterDriveQuestion(); }
+  }
+  updateSpeedo();
+  driveDraw();
+  driveRAF = requestAnimationFrame(driveLoop);
+}
+
+function updateSpeedo(){
+  const el = document.getElementById("dSpeedo");
+  if(!el) return;
+  el.innerHTML = state.speed < 0.5 ? "⏸ STOPPED"
+    : `<span class="dot">▶</span> ${Math.round(state.speed*7)} mph`;
+}
+
+/* ----- canvas drawing (driver's-eye / perspective view) ----- */
+function roundRect(ctx,x,y,w,h,r){
+  r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawEmoji(em,x,y,size){
+  const ctx = dctx;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = size + "px serif";
+  ctx.fillText(em, x, y);
+}
+
+/* perspective projection: p in [0,1], 0 = far (horizon), 1 = near (bottom) */
+function project(p){
+  const H = state.dh, hz = state.horizonY;
+  return {
+    y: hz + (H - hz) * p,
+    hw: state.roadTopHalf + (state.roadBotHalf - state.roadTopHalf) * p,
+    scale: 0.16 + 1.0 * p
+  };
+}
+
+function driveDraw(){
+  const W = state.dw, H = state.dh, ctx = dctx;
+  if(!W) return;
+  state.horizonY = H * 0.40;
+  state.roadTopHalf = Math.max(3, W*0.03);
+  state.roadBotHalf = W*0.54;
+  const cx = W/2, hz = state.horizonY;
+  const amb = (state.cur && state.cur.ambiance) || "day";
+
+  ctx.save();
+  if(state.shake > 0){
+    const s = state.shake;
+    ctx.translate((Math.random()-.5)*s, (Math.random()-.5)*s);
+    state.shake *= 0.85; if(state.shake < 0.5) state.shake = 0;
+  }
+
+  drawSky(amb, W, H, hz);
+  // ground / grass
+  ctx.fillStyle = amb==="night" ? "#16321f" : amb==="fog" ? "#8b9682" : "#3a7d44";
+  ctx.fillRect(0, hz, W, H-hz);
+  // road trapezoid
+  ctx.fillStyle = amb==="night" ? "#2b2f35" : "#42474d";
+  ctx.beginPath();
+  ctx.moveTo(cx-state.roadTopHalf, hz); ctx.lineTo(cx+state.roadTopHalf, hz);
+  ctx.lineTo(cx+state.roadBotHalf, H); ctx.lineTo(cx-state.roadBotHalf, H);
+  ctx.closePath(); ctx.fill();
+  // edge lines (converging)
+  ctx.strokeStyle = "#f2f2f2"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx-state.roadTopHalf,hz); ctx.lineTo(cx-state.roadBotHalf,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+state.roadTopHalf,hz); ctx.lineTo(cx+state.roadBotHalf,H); ctx.stroke();
+  // center dashes (perspective, flowing toward viewer)
+  ctx.fillStyle = "#f4c430";
+  const count = 16;
+  for(let i=0;i<count;i++){
+    const frac = ((i/count) + (state.scroll*0.018)) % 1;
+    if(frac < 0.05) continue;
+    const pr = project(frac);
+    const dw = Math.max(1.5, pr.hw*0.05);
+    const dh = Math.max(3, (H-hz)*0.06*frac);
+    ctx.fillRect(cx-dw/2, pr.y-dh/2, dw, dh);
+  }
+  if(amb==="night") drawHeadlights(W, H, cx);
+  // scenario object
+  if(state.cur){
+    const pObj = 0.16 + state.approachT*0.68;
+    drawScenarioPOV(state.cur, pObj, cx);
+  }
+  if(amb==="rain") drawRain(W, H);
+  if(amb==="fog") drawFog(W, H, hz);
+  // in-cabin chrome
+  drawMirror(W, H, cx);
+  drawDashboard(W, H, cx);
+  ctx.restore();
+}
+
+function drawSky(amb,W,H,hz){
+  const ctx = dctx;
+  const g = ctx.createLinearGradient(0,0,0,hz);
+  if(amb==="night"){ g.addColorStop(0,"#0a1430"); g.addColorStop(1,"#243a63"); }
+  else if(amb==="rain"){ g.addColorStop(0,"#54637a"); g.addColorStop(1,"#8a99ad"); }
+  else if(amb==="fog"){ g.addColorStop(0,"#c4ccc4"); g.addColorStop(1,"#e7ebe3"); }
+  else { g.addColorStop(0,"#7fbef2"); g.addColorStop(1,"#d8ecfb"); }
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,hz);
+  if(amb==="night"){
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    for(let i=0;i<22;i++){ ctx.fillRect((i*47)%W, (i*23)%Math.round(hz*0.85), 2, 2); }
+  }
+}
+
+function drawHeadlights(W,H,cx){
+  const ctx = dctx, hz = state.horizonY;
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = "rgba(255,240,160,0.10)";
+  [-1,1].forEach(s=>{
+    ctx.beginPath();
+    ctx.moveTo(cx + s*8, H);
+    ctx.lineTo(cx + s*state.roadBotHalf*0.7, H);
+    ctx.lineTo(cx + s*state.roadTopHalf, hz + (H-hz)*0.32);
+    ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawRain(W,H){
+  const ctx = dctx;
+  ctx.strokeStyle = "rgba(225,232,245,0.5)"; ctx.lineWidth = 1.4;
+  for(let i=0;i<46;i++){
+    const rx = (i*37 + state.scroll*2) % W;
+    const ry = (i*61 + state.scroll*7) % H;
+    ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx-4, ry+13); ctx.stroke();
+  }
+}
+
+function drawFog(W,H,hz){
+  const ctx = dctx;
+  const g = ctx.createLinearGradient(0, hz-16, 0, H);
+  g.addColorStop(0, "rgba(236,239,233,0.9)");
+  g.addColorStop(0.5, "rgba(236,239,233,0.30)");
+  g.addColorStop(1, "rgba(236,239,233,0)");
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+}
+
+/* rear-view mirror, always visible (shows what's behind) */
+function drawMirror(W,H,cx){
+  const ctx = dctx;
+  const mw = W*0.34, mh = H*0.07, mx = cx-mw/2, my = 7;
+  roundRect(ctx, mx-3, my-3, mw+6, mh+6, 9); ctx.fillStyle = "#15171b"; ctx.fill();
+  roundRect(ctx, mx, my, mw, mh, 6); ctx.fillStyle = "#3a4554"; ctx.fill();
+  // road receding behind, faint
+  ctx.save(); roundRect(ctx, mx, my, mw, mh, 6); ctx.clip();
+  ctx.fillStyle = "#2c3340"; ctx.fillRect(mx, my, mw, mh);
+  ctx.fillStyle = "#4a5666";
+  ctx.beginPath(); ctx.moveTo(cx-mw*0.05, my); ctx.lineTo(cx+mw*0.05, my); ctx.lineTo(cx+mw*0.28, my+mh); ctx.lineTo(cx-mw*0.28, my+mh); ctx.closePath(); ctx.fill();
+  if(state.cur && state.cur.visual==="mirror"){
+    const inten = 0.35 + 0.65*state.approachT;
+    if(state.cur.mirror==="emergency"){
+      const blink = Math.floor(state.frame/8)%2===0;
+      ctx.fillStyle = `rgba(255,45,45,${blink?inten:inten*0.3})`; ctx.fillRect(mx+mw*0.30, my+mh*0.32, mw*0.16, mh*0.42);
+      ctx.fillStyle = `rgba(50,110,255,${blink?inten*0.3:inten})`; ctx.fillRect(mx+mw*0.54, my+mh*0.32, mw*0.16, mh*0.42);
+    }else{ // tailgater headlights growing closer
+      ctx.fillStyle = `rgba(255,250,215,${inten})`;
+      const r = mh*(0.14 + 0.30*state.approachT);
+      ctx.beginPath(); ctx.arc(cx-mw*0.10, my+mh*0.55, r, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+mw*0.10, my+mh*0.55, r, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/* dashboard + steering wheel rising into view */
+function drawDashboard(W,H,cx){
+  const ctx = dctx;
+  const dashTop = H*0.85;
+  const g = ctx.createLinearGradient(0, dashTop-10, 0, H);
+  g.addColorStop(0, "#1f2935"); g.addColorStop(1, "#0b1017");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, H); ctx.lineTo(0, dashTop+6);
+  ctx.quadraticCurveTo(cx, dashTop-16, W, dashTop+6); ctx.lineTo(W, H);
+  ctx.closePath(); ctx.fill();
+  // steering wheel (only top arc shows)
+  const wr = W*0.30, wx = cx, wy = H + wr*0.52;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#14171c"; ctx.lineWidth = Math.max(9, W*0.04);
+  ctx.beginPath(); ctx.arc(wx, wy, wr, Math.PI*1.16, Math.PI*1.84); ctx.stroke();
+  ctx.strokeStyle = "#2b313b"; ctx.lineWidth = Math.max(3, W*0.012);
+  ctx.beginPath(); ctx.arc(wx, wy, wr, Math.PI*1.18, Math.PI*1.82); ctx.stroke();
+  // spokes + hub
+  ctx.strokeStyle = "#14171c"; ctx.lineWidth = Math.max(6, W*0.022);
+  ctx.beginPath(); ctx.moveTo(wx, wy-wr); ctx.lineTo(wx, wy-wr*0.45); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wx-wr*0.7, wy-wr*0.72); ctx.lineTo(wx-wr*0.2, wy-wr*0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(wx+wr*0.7, wy-wr*0.72); ctx.lineTo(wx+wr*0.2, wy-wr*0.5); ctx.stroke();
+  ctx.fillStyle = "#191d24"; ctx.beginPath(); ctx.arc(wx, wy-wr*0.34, wr*0.17, 0, Math.PI*2); ctx.fill();
+  ctx.lineCap = "butt";
+}
+
+function drawScenarioPOV(cur, p, cx){
+  const pr = project(p), sc = pr.scale;
+  const rightX = cx + pr.hw*1.12;
+  const laneX = cx + pr.hw*0.42;
+  switch(cur.visual){
+    case "sign":     drawPostSign(rightX, pr.y, sc, cur.icon); break;
+    case "speedsign":drawSpeedSign(rightX, pr.y, sc, cur.limit); break;
+    case "warn":     drawWarnSign(rightX, pr.y, sc, cur.icon, cur.tag==="Work Zone"?"#ff7a00":"#f7c600"); break;
+    case "light":    drawSignalPOV(cx, pr.y, sc, cur.color, cur.flash, pr.hw); break;
+    case "crosswalk":drawCrosswalkPOV(cx, pr); break;
+    case "railroad": drawRailroadPOV(cx, pr); break;
+    case "workzone": drawWorkzonePOV(cx, p); break;
+    case "hazard":   drawEmoji(cur.icon, laneX, pr.y - 14*sc, 30*sc); break;
+    case "leadcar":  drawCarPOV(laneX, pr.y, sc, "#2d6cdf", {brake:true}); break;
+    case "roadside": drawCarPOV(rightX, pr.y, sc*0.92, "#1f5fd0", {emergency:true}); break;
+    case "bus":      drawBusPOV(laneX, pr.y, sc); break;
+    case "mirror":   /* shown in rear-view mirror */ break;
+  }
+}
+
+function signPost(x,baseY,sc,postH){
+  const ctx = dctx;
+  ctx.strokeStyle = "#9aa3ad"; ctx.lineWidth = Math.max(1.5, 3*sc);
+  ctx.beginPath(); ctx.moveTo(x, baseY); ctx.lineTo(x, baseY-postH*sc); ctx.stroke();
+  return baseY - postH*sc;
+}
+
+function drawPostSign(x,y,sc,icon){
+  const ctx = dctx;
+  const topY = signPost(x, y, sc, 30);
+  const r = 22*sc;
+  const cyy = topY - r*0.8;
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1b2a44"; ctx.lineWidth = Math.max(1.5, 2*sc);
+  ctx.beginPath(); ctx.arc(x, cyy, r, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  drawEmoji(icon, x, cyy, r*1.5);
+}
+
+function drawSpeedSign(x,y,sc,limit){
+  const ctx = dctx;
+  const w = 38*sc, h = 50*sc;
+  const topY = signPost(x, y, sc, 24);
+  const ry = topY - h;
+  roundRect(ctx, x-w/2, ry, w, h, 3*sc); ctx.fillStyle = "#fff"; ctx.strokeStyle = "#111"; ctx.lineWidth = Math.max(1.5,2*sc); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#111"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = "800 " + (9*sc) + "px Arial";
+  ctx.fillText("SPEED", x, ry+h*0.20);
+  ctx.fillText("LIMIT", x, ry+h*0.40);
+  ctx.font = "900 " + (18*sc) + "px Arial";
+  ctx.fillText(String(limit), x, ry+h*0.72);
+}
+
+function drawWarnSign(x,y,sc,icon,color){
+  const ctx = dctx;
+  const r = 24*sc;
+  const topY = signPost(x, y, sc, 26);
+  const cyy = topY - r;
+  ctx.save(); ctx.translate(x, cyy); ctx.rotate(Math.PI/4);
+  roundRect(ctx, -r, -r, 2*r, 2*r, 5*sc); ctx.fillStyle = color||"#f7c600"; ctx.strokeStyle = "#222"; ctx.lineWidth = Math.max(1.5,2*sc); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  drawEmoji(icon, x, cyy, r*1.1);
+}
+
+function drawSignalPOV(cx,y,sc,color,flash,hw){
+  const ctx = dctx;
+  const w = 26*sc, h = 62*sc;
+  const sy = y - hw*0.55 - h;
+  // mast arm from right
+  ctx.strokeStyle = "#3c4147"; ctx.lineWidth = Math.max(2,3*sc);
+  ctx.beginPath(); ctx.moveTo(cx, sy+h*0.5); ctx.lineTo(cx+hw*1.25, sy+h*0.5); ctx.lineTo(cx+hw*1.25, y); ctx.stroke();
+  roundRect(ctx, cx-w/2, sy, w, h, 5*sc); ctx.fillStyle = "#15181c"; ctx.fill();
+  const r = w*0.30;
+  const lights = [["red", sy+h*0.22],["yellow", sy+h*0.5],["green", sy+h*0.78]];
+  const blink = flash ? (Math.floor(state.frame/15)%2===0) : true;
+  const lit = {red:"#ff3b30", yellow:"#ffcc00", green:"#34c759"};
+  lights.forEach(([col,cyc])=>{
+    const on = (col===color) && blink;
+    ctx.beginPath(); ctx.arc(cx, cyc, r, 0, Math.PI*2);
+    ctx.fillStyle = on ? lit[col] : "#2a2e33"; ctx.fill();
+    if(on){ ctx.shadowColor = lit[col]; ctx.shadowBlur = 12*sc; ctx.fill(); ctx.shadowBlur = 0; }
+  });
+}
+
+function drawCrosswalkPOV(cx,pr){
+  const ctx = dctx;
+  const stripes = 6, totalW = 2*pr.hw*0.9, sw = totalW/(stripes*2);
+  const bandH = Math.max(4, 9*pr.scale);
+  ctx.fillStyle = "#eef0f2";
+  for(let i=0;i<stripes;i++){ ctx.fillRect(cx - pr.hw*0.9 + i*2*sw, pr.y-bandH/2, sw, bandH); }
+  drawEmoji("🚶", cx, pr.y - 18*pr.scale, 28*pr.scale);
+}
+
+function drawRailroadPOV(cx,pr){
+  const ctx = dctx;
+  ctx.fillStyle = "#6b5536"; ctx.fillRect(cx-pr.hw, pr.y-9*pr.scale, 2*pr.hw, 18*pr.scale);
+  ctx.fillStyle = "#33373d";
+  ctx.fillRect(cx-pr.hw, pr.y-6*pr.scale, 2*pr.hw, 3*pr.scale);
+  ctx.fillRect(cx-pr.hw, pr.y+3*pr.scale, 2*pr.hw, 3*pr.scale);
+  // crossbuck + flashing lights on right
+  const x = cx + pr.hw*1.12, sc = pr.scale;
+  const topY = signPost(x, pr.y, sc, 30);
+  const r = 16*sc;
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2,4*sc);
+  ctx.beginPath(); ctx.moveTo(x-r, topY-r); ctx.lineTo(x+r, topY+r); ctx.moveTo(x+r, topY-r); ctx.lineTo(x-r, topY+r); ctx.stroke();
+  const blink = Math.floor(state.frame/12)%2===0;
+  ctx.fillStyle = blink ? "#ff2d2d" : "#5a0000";
+  ctx.beginPath(); ctx.arc(x-r-4*sc, topY, 3*sc, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = blink ? "#5a0000" : "#ff2d2d";
+  ctx.beginPath(); ctx.arc(x+r+4*sc, topY, 3*sc, 0, Math.PI*2); ctx.fill();
+}
+
+function drawWorkzonePOV(cx,p){
+  const ctx = dctx;
+  for(let i=0;i<3;i++){
+    const pp = p - i*0.05; if(pp < 0.05) continue;
+    const pr2 = project(pp), cxx = cx + pr2.hw*0.42, cyy = pr2.y, s = pr2.scale;
+    ctx.fillStyle = "#ff7a00";
+    ctx.beginPath(); ctx.moveTo(cxx, cyy-12*s); ctx.lineTo(cxx-9*s, cyy+8*s); ctx.lineTo(cxx+9*s, cyy+8*s); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.fillRect(cxx-6*s, cyy-1*s, 12*s, 3*s);
+  }
+  const pr = project(p);
+  drawWarnSign(cx + pr.hw*1.12, pr.y, pr.scale, "🚧", "#ff7a00");
+}
+
+function drawCarPOV(x,y,sc,color,opts){
+  const ctx = dctx; opts = opts || {};
+  const w = 50*sc, h = 44*sc;
+  ctx.fillStyle = "rgba(0,0,0,.22)";
+  ctx.beginPath(); ctx.ellipse(x, y+2*sc, w*0.55, 5*sc, 0, 0, Math.PI*2); ctx.fill();
+  roundRect(ctx, x-w/2, y-h, w, h, 6*sc); ctx.fillStyle = color; ctx.fill();
+  // rear window
+  ctx.fillStyle = "rgba(0,0,0,.35)"; roundRect(ctx, x-w*0.36, y-h*0.88, w*0.72, h*0.34, 4*sc); ctx.fill();
+  // bumper
+  ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(x-w/2, y-h*0.20, w, h*0.13);
+  // tail lights
+  ctx.fillStyle = opts.brake ? "#ff2d2d" : "#c0392b";
+  roundRect(ctx, x-w*0.42, y-h*0.46, w*0.16, h*0.16, 2*sc); ctx.fill();
+  roundRect(ctx, x+w*0.26, y-h*0.46, w*0.16, h*0.16, 2*sc); ctx.fill();
+  if(opts.emergency){
+    const blink = Math.floor(state.frame/8)%2===0;
+    ctx.fillStyle = blink ? "#ff3b30" : "#0a84ff"; ctx.fillRect(x-w*0.30, y-h-4*sc, w*0.26, 5*sc);
+    ctx.fillStyle = blink ? "#0a84ff" : "#ff3b30"; ctx.fillRect(x+w*0.04, y-h-4*sc, w*0.26, 5*sc);
+  }
+}
+
+function drawBusPOV(x,y,sc){
+  const ctx = dctx;
+  const w = 64*sc, h = 70*sc;
+  ctx.fillStyle = "rgba(0,0,0,.22)";
+  ctx.beginPath(); ctx.ellipse(x, y+2*sc, w*0.55, 6*sc, 0, 0, Math.PI*2); ctx.fill();
+  roundRect(ctx, x-w/2, y-h, w, h, 6*sc); ctx.fillStyle = "#f7c600"; ctx.fill();
+  ctx.strokeStyle = "#c9a400"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = "#1c2735"; ctx.fillRect(x-w*0.36, y-h*0.80, w*0.72, h*0.22); // rear window
+  ctx.fillStyle = "#0b2540"; ctx.fillRect(x-w*0.40, y-h*0.18, w*0.80, h*0.12); // bumper
+  ctx.fillStyle = "#111"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = "800 " + (8*sc) + "px Arial"; ctx.fillText("SCHOOL BUS", x, y-h*0.45);
+  const blink = Math.floor(state.frame/10)%2===0;
+  ctx.fillStyle = blink ? "#ff2d2d" : "#5a0000";
+  ctx.beginPath(); ctx.arc(x-w*0.34, y-h*0.96, 4*sc, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+w*0.34, y-h*0.96, 4*sc, 0, Math.PI*2); ctx.fill();
+  // stop arm
+  ctx.fillStyle = "#d11"; roundRect(ctx, x-w/2-14*sc, y-h*0.5, 13*sc, 13*sc, 2*sc); ctx.fill();
+}
+
+/* ----- drive interaction ----- */
+function enterDriveQuestion(){
+  state.phase = "question"; state.answered = false;
+  const cur = state.cur;
+  const hint = document.getElementById("dHint"); if(hint) hint.style.display = "none";
+  const ov = document.getElementById("dOverlay");
+  ov.innerHTML = `
+    <div class="drive-q">
+      <div class="prompt"><span class="tag">${cur.tag}</span><br>${cur.prompt}</div>
+      <div class="choices">
+        ${cur.choices.map((ch,i)=>`
+          <button class="choice" data-i="${i}">
+            <span class="key">${"ABCD"[i]}</span><span class="ctext">${ch.text}</span>
+          </button>`).join("")}
+      </div>
+    </div>`;
+  ov.classList.add("show");
+  ov.querySelectorAll(".choice").forEach(b=> b.onclick = ()=> driveAnswer(parseInt(b.dataset.i,10)));
+}
+
+function driveAnswer(i){
+  if(state.answered) return;
+  state.answered = true;
+  const cur = state.cur;
+  const correct = i === cur.correctIdx;
+  const ov = document.getElementById("dOverlay");
+  const btns = [...ov.querySelectorAll(".choice")];
+  btns.forEach((b,bi)=>{
+    b.disabled = true;
+    if(bi===cur.correctIdx) b.classList.add("correct");
+    else if(bi===i) b.classList.add("wrong");
+    else b.classList.add("muted-c");
+  });
+
+  if(correct){
+    state.score++; state.streak++; state.bestStreak = Math.max(state.bestStreak, state.streak);
+    state.perCat[cur.c].correct++; sfx.correct();
+  }else{
+    state.streak = 0; state.hearts = Math.max(0, state.hearts-1); state.shake = 16;
+    sfx.wrong(); setTimeout(()=>sfx.heart(), 160);
+  }
+  updateDriveHUD();
+  state.phase = "feedback";
+
+  const gameOver = state.hearts <= 0;
+  if(gameOver) state.gameOver = true;
+  const last = state.dIdx+1 >= state.scenarios.length;
+  const nextLabel = gameOver ? "See Results →" : (last ? "🏁 Finish Trip →" : "Drive On →");
+
+  const fb = document.createElement("div");
+  fb.className = "drive-feedback " + (correct?"ok":"no");
+  fb.innerHTML = `
+    <div class="verdict">${correct ? "✅ Nice driving!" + (state.streak>=3?` 🔥${state.streak}`:"") : "❌ Careful!"}</div>
+    <div class="explain">${correct ? "" : `<b>Right move:</b> ${cur.choices[cur.correctIdx].text}. `}${cur.e}</div>
+    <div class="ref">📖 <b>Where to study:</b> ${cur.ref}<br>
+      <a class="manual-link" href="${manualHref(cur.ref)}" target="_blank" rel="noopener noreferrer">${manualLinkText(cur.ref)}</a></div>
+    <div style="margin-top:10px"><button class="btn primary" id="nextBtn">${nextLabel}</button></div>`;
+  ov.querySelector(".drive-q").appendChild(fb);
+  const nb = document.getElementById("nextBtn");
+  nb.onclick = ()=>{ sfx.click(); driveNext(); };
+  nb.focus();
+}
+
+function driveNext(){
+  const ov = document.getElementById("dOverlay");
+  if(ov){ ov.classList.remove("show"); ov.innerHTML = ""; }
+  if(state.gameOver || state.dIdx+1 >= state.scenarios.length){
+    state.idx = state.dIdx;
+    if(!state.gameOver) state.dIdx = state.scenarios.length;
+    updateDriveHUD();
+    renderResults();
+    return;
+  }
+  state.dIdx++; state.idx = state.dIdx;
+  state.cur = state.scenarios[state.dIdx];
+  state.approachT = 0; state.answered = false; state.phase = "driving";
+  const hint = document.getElementById("dHint");
+  if(hint){ hint.textContent = "Keep driving — watch the road ahead… 🚗💨"; hint.style.display = "block"; }
+  updateDriveHUD();
+}
+
+function updateDriveHUD(){
+  const total = state.scenarios.length;
+  const he = document.getElementById("dHearts"); if(he) he.innerHTML = heartsHTML();
+  const se = document.getElementById("dScore"); if(se) se.textContent = state.score;
+  const st = document.getElementById("dStreak"); if(st) st.textContent = "🔥" + state.streak;
+  const prog = Math.round(state.dIdx/total*100);
+  const fill = document.getElementById("dFill"); if(fill) fill.style.width = prog + "%";
+  const mark = document.getElementById("dCar"); if(mark) mark.style.left = prog + "%";
+}
+
+/* ---------- Start ---------- */
+renderStart();
+</script>
+</body>
+</html>
